@@ -1,6 +1,5 @@
 extern crate lm_sensors;
 extern crate log;
-extern crate ipmiraw;
 
 mod config;
 mod calc_temp_fan;
@@ -8,10 +7,22 @@ use syslog::{Facility, Formatter3164, BasicLogger};
 use log::{SetLoggerError, LevelFilter, info};
 
 use std::env;
-use ipmiraw::si::Ipmi;
 use std::thread::sleep;
 use std::time::Duration;
 use std::process::Command;
+
+fn find_temp_fan_speed_map<'a>(data: &'a config::TemperatureData, name: & String) -> Result<&'a Vec<config::TemperaturePoint>, String> {
+    if data.temperature_points.is_none() {
+        return Err("No temperature point defined!".to_string());
+    }
+    let temp_map_vec = data.temperature_points.as_ref().unwrap();
+    for map in temp_map_vec {
+        if map.name == *name {
+            return Ok(map.map.as_ref());
+        }
+    }
+    Err("No temperature point defined!".to_string())
+}
 
 fn changed_fan_speed(fanid: u8, pwm: u8) {
     let fanid_str = format!("0x{:02x}", fanid);
@@ -31,7 +42,8 @@ fn main() {
     };
     let mut contents = config::openYAML(filename);
     let data = config::parse(&mut contents);
-    calc_temp_fan::forset_data(&data);
+    calc_temp_fan::clear_data();
+    //calc_temp_fan::forset_data(&data);
 
     let sensors = lm_sensors::Initializer::default().initialize().expect("Sensor initialization failure!");
 
@@ -59,12 +71,12 @@ fn main() {
     info!("Perform detection every {} seconds!", interval);
 
     while true {
-        let mut coretemp_sum: f64 = 0.0;
-        let mut count_temp: u8 = 0;
         for chip in sensors.chip_iter(None) {
             if let Some(path) = chip.path() {
                 let name: String = chip.name().expect("Failed to get chip name!");
                 if name.contains("coretemp") {
+                    let mut coretemp_sum: f64 = 0.0;
+                    let mut count_temp: u8 = 0;
                     println!("CPU Chip: Checking, {}!",chip);
                     for feature in chip.feature_iter() {
                         let name = feature.name().transpose().unwrap().unwrap_or("N/A");
@@ -85,20 +97,107 @@ fn main() {
                             }
                         }
                     }
+                    let temp = (coretemp_sum / count_temp as f64) as u8;
+                    let mut info_log = format!("Average temperature detected of {}: {}!", name, temp);
+                    println!("{}", info_log);
+                    info!("{}", info_log);
+                    for i in 0..fan_num {
+                        let fan_map = &data.setting.fan_map;
+                        let mut found = false;
+                        match fan_map {
+                            Some(fan_map) => {
+                                let n = fan_map.len();
+                                for j in 0..n {
+                                    let id = fan_map[j].id;
+                                    if id != i {
+                                        continue;
+                                    }
+                                    found = true;
+                                    if fan_map[j].static_fan_map.is_some() {
+                                        continue;
+                                    }
+                                    if fan_map[j].dynamic_cpu_chip.is_none() || fan_map[j].dynamic_fan_speed_map.is_none() {
+                                        continue
+                                    }
+                                    let chip_name = fan_map[j].dynamic_cpu_chip.as_ref().unwrap();
+                                    if *chip_name != name {
+                                        continue;
+                                    }
+                                    let fan_speed_map = fan_map[j].dynamic_fan_speed_map.as_ref().unwrap();
+                                    let mut fan_temp_map: &Vec<config::TemperaturePoint> = find_temp_fan_speed_map(&data, &fan_speed_map).unwrap();
+                                    calc_temp_fan::clear_data();
+                                    calc_temp_fan::forset_data(fan_temp_map);
+                                    let pwm = calc_temp_fan::calc_fan_pwm(temp);
+                                    info_log = format!("Calculate the appropriate fan speed for the fan with ID {} based on CPU chip {}: {}%!", i, name, pwm);
+                                    println!("{}", info_log);
+                                    info!("{}", info_log);
+                                    changed_fan_speed(i, pwm);
+                                    calc_temp_fan::clear_data();
+                                }
+                                if found == false {
+                                    let mut info_log = format!("No fan mapping rules configured, execute default temperature mapping!");
+                                    println!("{}", info_log);
+                                    info!("{}", info_log);
+                                    let mut fan_temp_map: &Vec<config::TemperaturePoint> = find_temp_fan_speed_map(&data, &"default".to_string()).unwrap();
+                                    calc_temp_fan::clear_data();
+                                    calc_temp_fan::forset_data(fan_temp_map);
+                                    let pwm = calc_temp_fan::calc_fan_pwm(temp);
+                                    info_log = format!("Calculate the appropriate fan speed for the fan with ID {} based on CPU chip {}: {}%!", i, name, pwm);
+                                    println!("{}", info_log);
+                                    info!("{}", info_log);
+                                    changed_fan_speed(i, pwm);
+                                    calc_temp_fan::clear_data();
+                                }
+                            },
+                            None => {
+                                let mut info_log = format!("No fan mapping rules configured, execute default temperature mapping!");
+                                println!("{}", info_log);
+                                info!("{}", info_log);
+                                let mut fan_temp_map: &Vec<config::TemperaturePoint> = find_temp_fan_speed_map(&data, &"default".to_string()).unwrap();
+                                calc_temp_fan::clear_data();
+                                calc_temp_fan::forset_data(fan_temp_map);
+                                let pwm = calc_temp_fan::calc_fan_pwm(temp);
+                                info_log = format!("Calculate the appropriate fan speed for the fan with ID {} based on CPU chip {}: {}%!", i, name, pwm);
+                                println!("{}", info_log);
+                                info!("{}", info_log);
+                                changed_fan_speed(i, pwm);
+                                calc_temp_fan::clear_data();
+                            }
+                        }
+                    }
                 }
             }
         }
-        let temp = (coretemp_sum / count_temp as f64) as u8;
-        let mut info_log = format!("Average temperature detected: {}!", temp);
+
+        let mut info_log = format!("Check the fan for static mapping!");
         println!("{}", info_log);
         info!("{}", info_log);
-        let pwm = calc_temp_fan::calc_fan_pwm(temp);
-        info_log = format!("Calculate the appropriate fan speed: {}%!", pwm);
-        println!("{}", info_log);
-        info!("{}", info_log);
-        
         for i in 0..fan_num {
-            changed_fan_speed(i, pwm);
+            let fan_map = &data.setting.fan_map;
+            match fan_map {
+                Some(fan_map) => {
+                    let n = fan_map.len();
+                    for j in 0..n {
+                        let id = fan_map[j].id;
+                        if id != i {
+                            continue;
+                        }
+                        if fan_map[j].dynamic_cpu_chip.is_some() || fan_map[j].dynamic_fan_speed_map.is_some() {
+                            continue
+                        }
+                        if fan_map[j].static_fan_map.is_none() {
+                            continue;
+                        }
+                        let pwm = fan_map[j].static_fan_map.unwrap();
+                        info_log = format!("Use static speed configuration for Fan {}: {}%!", i, pwm);
+                        println!("{}", info_log);
+                        info!("{}", info_log);
+                        changed_fan_speed(i, pwm);
+                    }
+                },
+                None => {
+                }
+            }
         }
 
         sleep(Duration::from_secs(interval));

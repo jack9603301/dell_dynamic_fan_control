@@ -9,14 +9,29 @@ pub struct TemperaturePoint {
 }
 
 #[derive(Deserialize)]
+pub struct TemperaturePointMap {
+    pub name: String,
+    pub map: Vec<TemperaturePoint>
+}
+
+#[derive(Deserialize)]
+pub struct FanMap {
+    pub id: u8,
+    pub static_fan_map: Option<u8>,
+    pub dynamic_cpu_chip: Option<String>,
+    pub dynamic_fan_speed_map: Option<String>
+}
+
+#[derive(Deserialize)]
 pub struct Setting {
     pub fan_num: u8,
-    pub interval: u64
+    pub interval: u64,
+    pub fan_map: Option<Vec<FanMap>>
 }
 
 #[derive(Deserialize)]
 pub struct TemperatureData {
-    pub temperature_points: Vec<TemperaturePoint>,
+    pub temperature_points: Option<Vec<TemperaturePointMap>>,
     pub setting: Setting
 }
 

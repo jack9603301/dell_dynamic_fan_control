@@ -19,8 +19,8 @@ fn line_inter(x0: u8, y0: u8, x1: u8, y1: u8, x: u8) -> u8 {
 }
 
 fn inter(temperatures: &Vec<u8>, pwms: &Vec<u8>, target: u8) -> u8 {
-    let prev_temp = temperatures[0];
-    let prev_pwm = pwms[0];
+    let mut prev_temp = temperatures[0];
+    let mut prev_pwm = pwms[0];
     if target <= prev_temp {
         return prev_pwm;
     }
@@ -30,14 +30,21 @@ fn inter(temperatures: &Vec<u8>, pwms: &Vec<u8>, target: u8) -> u8 {
             println!("{}", temperatures[i]);
             return line_inter(prev_temp, prev_pwm, temperatures[i], pwms[i], target);
         }
-        let prev_temp = temperatures[i];
-        let prev_pwm = pwms[i];
+        prev_temp = temperatures[i];
+        prev_pwm = pwms[i];
     }
     return prev_pwm;
 }
 
-pub fn forset_data(point: & super::config::TemperatureData) {
-    for point in &point.temperature_points {
+pub fn clear_data() {
+    unsafe {
+        g_temperatures.clear();
+        g_fan_pwms.clear();
+    }
+}
+
+pub fn forset_data(points: & Vec<super::config::TemperaturePoint>) {
+    for point in points {
         println!("Temperature: {}, FAN Speed: {}", point.temperature, point.fan_speed);
         unsafe {
             g_temperatures.push(point.temperature);
