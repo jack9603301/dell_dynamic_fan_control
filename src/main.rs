@@ -75,8 +75,7 @@ fn main() {
             if let Some(path) = chip.path() {
                 let name: String = chip.name().expect("Failed to get chip name!");
                 if name.contains("coretemp") {
-                    let mut coretemp_sum: f64 = 0.0;
-                    let mut count_temp: u8 = 0;
+                    let mut coretemp: f64 = 0.0;
                     println!("CPU Chip: Checking, {}!",chip);
                     for feature in chip.feature_iter() {
                         let name = feature.name().transpose().unwrap().unwrap_or("N/A");
@@ -91,14 +90,15 @@ fn main() {
                                 };
                                 if subname.contains("input") {
                                     println!("Check Temperature as {}: {}!", chip, value);
-                                    coretemp_sum = coretemp_sum + value.raw_value();
-                                    count_temp = count_temp + 1;
+                                    if coretemp < value.raw_value() {
+                                        coretemp = value.raw_value();
+                                    }
                                 }
                             }
                         }
                     }
-                    let temp = (coretemp_sum / count_temp as f64) as u8;
-                    let mut info_log = format!("Average temperature detected of {}: {}!", name, temp);
+                    let temp = coretemp as u8;
+                    let mut info_log = format!("Maximum temperature detected of {}: {}!", name, temp);
                     println!("{}", info_log);
                     info!("{}", info_log);
                     for i in 0..fan_num {
