@@ -1,6 +1,8 @@
 use std::fs::File;
 use std::io::Read;
 use serde::Deserialize;
+use std::cmp::PartialOrd;
+use std::clone::Clone;
 
 #[derive(Deserialize)]
 pub struct TemperaturePoint {
@@ -15,11 +17,21 @@ pub struct TemperaturePointMap {
 }
 
 #[derive(Deserialize)]
+#[derive(Clone)]
+#[derive(Ord)]
+#[derive(Eq)]
+pub struct AdvancedSpeedMap {
+    pub speed_map: String,
+    pub refer: u8
+}
+
+#[derive(Deserialize)]
 pub struct FanMap {
     pub id: u8,
     pub static_fan_map: Option<u8>,
     pub dynamic_cpu_chip: Option<String>,
-    pub dynamic_fan_speed_map: Option<String>
+    pub dynamic_fan_speed_map: Option<String>,
+    pub advanced_speed_map: Option<Vec<AdvancedSpeedMap>>
 }
 
 #[derive(Deserialize)]
@@ -45,4 +57,16 @@ pub fn openYAML(filename: &str) -> String {
 pub fn parse(contents: &mut String) -> TemperatureData {
     let data: TemperatureData = serde_yaml::from_str(&contents).expect("Failure to parse configuration file");
     return data;
+}
+
+impl PartialOrd for AdvancedSpeedMap {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.refer.partial_cmp(&other.refer)
+    }
+}
+
+impl PartialEq for AdvancedSpeedMap {
+    fn eq(&self, other: &Self) -> bool {
+        self.refer == other.refer
+    }
 }

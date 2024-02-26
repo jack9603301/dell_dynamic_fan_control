@@ -58,7 +58,7 @@ fn main() {
         Err(e) => { println!("impossible to connect to syslog: {:?}", e); return; },
         Ok(logger) => logger,
     };
-    log::set_boxed_logger(Box::new(BasicLogger::new(logger)))
+    let _ = log::set_boxed_logger(Box::new(BasicLogger::new(logger)))
             .map(|()| log::set_max_level(LevelFilter::Info));
 
     let fan_num = data.setting.fan_num;
@@ -70,15 +70,14 @@ fn main() {
     println!("Perform detection every {} seconds!", interval);
     info!("Perform detection every {} seconds!", interval);
 
-    while true {
+    loop {
         for chip in sensors.chip_iter(None) {
-            if let Some(path) = chip.path() {
+            if chip.path().is_some() {
                 let name: String = chip.name().expect("Failed to get chip name!");
                 if name.contains("coretemp") {
                     let mut coretemp: f64 = 0.0;
                     println!("CPU Chip: Checking, {}!",chip);
                     for feature in chip.feature_iter() {
-                        let name = feature.name().transpose().unwrap().unwrap_or("N/A");
                         for sub_feature in feature.sub_feature_iter() {
                             if let Ok(value) = sub_feature.value() {
                                 let subname: String = match sub_feature.name() {
@@ -116,15 +115,36 @@ fn main() {
                                     if fan_map[j].static_fan_map.is_some() {
                                         continue;
                                     }
-                                    if fan_map[j].dynamic_cpu_chip.is_none() || fan_map[j].dynamic_fan_speed_map.is_none() {
+                                    if fan_map[j].dynamic_cpu_chip.is_none() || (fan_map[j].dynamic_fan_speed_map.is_none() && fan_map[j].advanced_speed_map.is_none()) {
                                         continue
                                     }
                                     let chip_name = fan_map[j].dynamic_cpu_chip.as_ref().unwrap();
                                     if *chip_name != name {
                                         continue;
                                     }
-                                    let fan_speed_map = fan_map[j].dynamic_fan_speed_map.as_ref().unwrap();
-                                    let mut fan_temp_map: &Vec<config::TemperaturePoint> = find_temp_fan_speed_map(&data, &fan_speed_map).unwrap();
+                                    let mut fan_speed_map: String = String::new();
+                                    if fan_map[j].dynamic_fan_speed_map.is_some() {
+                                        fan_speed_map = fan_map[j].dynamic_fan_speed_map.as_ref().unwrap().clone();
+                                    } else {
+                                        info_log = format!("Detecting the advanced speed of fan {}", i);
+                                        println!("{}", info_log);
+                                        info!("{}", info_log);
+                                        let advanced_speed_map = fan_map[j].advanced_speed_map.as_ref().unwrap();
+                                        let curr_temp = temp;
+                                        let mut current_map: Vec<config::AdvancedSpeedMap> = advanced_speed_map.clone();
+                                        let mut max_refer: u8 = 0;
+                                        current_map.sort();
+                                        for speed_map in current_map  {
+                                            if speed_map.refer >= max_refer && speed_map.refer <= curr_temp {
+                                                max_refer = speed_map.refer;
+                                                fan_speed_map = speed_map.speed_map;
+                                            }
+                                        }
+                                        info_log = format!("Detected the advanced speed map of fan {}: {}", i, fan_speed_map);
+                                        println!("{}", info_log);
+                                        info!("{}", info_log);
+                                    }
+                                    let fan_temp_map: &Vec<config::TemperaturePoint> = find_temp_fan_speed_map(&data, &fan_speed_map).unwrap();
                                     calc_temp_fan::clear_data();
                                     calc_temp_fan::forset_data(fan_temp_map);
                                     let pwm = calc_temp_fan::calc_fan_pwm(temp);
@@ -138,7 +158,7 @@ fn main() {
                                     let mut info_log = format!("No fan mapping rules configured, execute default temperature mapping!");
                                     println!("{}", info_log);
                                     info!("{}", info_log);
-                                    let mut fan_temp_map: &Vec<config::TemperaturePoint> = find_temp_fan_speed_map(&data, &"default".to_string()).unwrap();
+                                    let fan_temp_map: &Vec<config::TemperaturePoint> = find_temp_fan_speed_map(&data, &"default".to_string()).unwrap();
                                     calc_temp_fan::clear_data();
                                     calc_temp_fan::forset_data(fan_temp_map);
                                     let pwm = calc_temp_fan::calc_fan_pwm(temp);
@@ -153,7 +173,7 @@ fn main() {
                                 let mut info_log = format!("No fan mapping rules configured, execute default temperature mapping!");
                                 println!("{}", info_log);
                                 info!("{}", info_log);
-                                let mut fan_temp_map: &Vec<config::TemperaturePoint> = find_temp_fan_speed_map(&data, &"default".to_string()).unwrap();
+                                let fan_temp_map: &Vec<config::TemperaturePoint> = find_temp_fan_speed_map(&data, &"default".to_string()).unwrap();
                                 calc_temp_fan::clear_data();
                                 calc_temp_fan::forset_data(fan_temp_map);
                                 let pwm = calc_temp_fan::calc_fan_pwm(temp);
