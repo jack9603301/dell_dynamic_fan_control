@@ -10,6 +10,7 @@ use std::env;
 use std::thread::sleep;
 use std::time::Duration;
 use std::process::Command;
+use std::collections::BTreeMap;
 
 fn find_temp_fan_speed_map<'a>(data: &'a config::TemperatureData, name: & String) -> Result<&'a Vec<config::TemperaturePoint>, String> {
     if data.temperature_points.is_none() {
@@ -70,6 +71,7 @@ fn main() {
     println!("Perform detection every {} seconds!", interval);
     info!("Perform detection every {} seconds!", interval);
 
+    let mut current_advance_speed_map: BTreeMap<u8,config::AdvancedSpeedMap> = BTreeMap::new();
     loop {
         for chip in sensors.chip_iter(None) {
             if chip.path().is_some() {
@@ -125,7 +127,7 @@ fn main() {
                                     let mut fan_speed_map: String = String::new();
                                     if fan_map[j].dynamic_fan_speed_map.is_some() {
                                         fan_speed_map = fan_map[j].dynamic_fan_speed_map.as_ref().unwrap().clone();
-                                    } else {
+                                    } else if fan_map[j].advanced_speed_map.is_some() && !current_advance_speed_map.contains_key(&i) {
                                         info_log = format!("Detecting the advanced speed of fan {}", i);
                                         println!("{}", info_log);
                                         info!("{}", info_log);
@@ -137,12 +139,60 @@ fn main() {
                                         for speed_map in current_map  {
                                             if speed_map.refer >= max_refer && speed_map.refer <= curr_temp {
                                                 max_refer = speed_map.refer;
-                                                fan_speed_map = speed_map.speed_map;
+                                                fan_speed_map = speed_map.speed_map.clone();
+                                                let turn_off_refer = speed_map.turn_off_refer;
+                                                if turn_off_refer.is_some() {
+                                                    current_advance_speed_map.insert(i, speed_map.clone());
+                                                }
                                             }
                                         }
                                         info_log = format!("Detected the advanced speed map of fan {}: {}", i, fan_speed_map);
                                         println!("{}", info_log);
                                         info!("{}", info_log);
+                                    } else {
+                                        let current_speed_map = current_advance_speed_map[&i].clone();
+                                        let current_speed_map_name = current_speed_map.speed_map.clone();
+                                        let current_speed_turn_off_refer = current_speed_map.turn_off_refer;
+                                        let mut turn_off = true;
+                                        info_log = format!("Enabled speed mapping detected for fan {}: {}", i, current_speed_map_name);
+                                        println!("{}", info_log);
+                                        info!("{}", info_log);
+                                        if current_speed_turn_off_refer.is_some() {
+                                            let curr_temp = temp;
+                                            if curr_temp >= current_speed_turn_off_refer.unwrap() {
+                                                fan_speed_map = current_speed_map_name.clone();
+                                                turn_off = false;
+                                                info_log = format!("Temperatures lower than the enabled speed profile {} of fan {} will turn off the speed mapping in effect!", current_speed_map_name, i);
+                                            }
+                                        }
+
+                                        if turn_off {
+                                            info_log = format!("Turn off speed mapping configurations that are already in effect: {}", fan_speed_map);
+                                            println!("{}", info_log);
+                                            info!("{}", info_log);
+                                            current_advance_speed_map.remove(&i);
+                                            info_log = format!("Detecting the advanced speed of fan {}", i);
+                                            println!("{}", info_log);
+                                            info!("{}", info_log);
+                                            let advanced_speed_map = fan_map[j].advanced_speed_map.as_ref().unwrap();
+                                            let curr_temp = temp;
+                                            let mut current_map: Vec<config::AdvancedSpeedMap> = advanced_speed_map.clone();
+                                            let mut max_refer: u8 = 0;
+                                            current_map.sort();
+                                            for speed_map in current_map  {
+                                                if speed_map.refer >= max_refer && speed_map.refer <= curr_temp {
+                                                    max_refer = speed_map.refer;
+                                                    fan_speed_map = speed_map.speed_map.clone();
+                                                    let turn_off_refer = speed_map.turn_off_refer;
+                                                    if turn_off_refer.is_some() {
+                                                        current_advance_speed_map.insert(i, speed_map.clone());
+                                                    }
+                                                }
+                                            }
+                                            info_log = format!("Detected the advanced speed map of fan {}: {}", i, fan_speed_map);
+                                            println!("{}", info_log);
+                                            info!("{}", info_log);
+                                        }
                                     }
                                     let fan_temp_map: &Vec<config::TemperaturePoint> = find_temp_fan_speed_map(&data, &fan_speed_map).unwrap();
                                     calc_temp_fan::clear_data();

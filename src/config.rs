@@ -17,12 +17,12 @@ pub struct TemperaturePointMap {
 }
 
 #[derive(Deserialize)]
-#[derive(Clone)]
 #[derive(Ord)]
 #[derive(Eq)]
 pub struct AdvancedSpeedMap {
     pub speed_map: String,
-    pub refer: u8
+    pub refer: u8,
+    pub turn_off_refer: Option<u8>
 }
 
 #[derive(Deserialize)]
@@ -68,5 +68,15 @@ impl PartialOrd for AdvancedSpeedMap {
 impl PartialEq for AdvancedSpeedMap {
     fn eq(&self, other: &Self) -> bool {
         self.refer == other.refer
+    }
+}
+
+impl Clone for AdvancedSpeedMap {
+    fn clone(&self) -> Self {
+        Self {
+            speed_map: self.speed_map.clone(),
+            refer: self.refer,
+            turn_off_refer: self.turn_off_refer
+        }
     }
 }
