@@ -52,7 +52,7 @@ fn main() {
         facility: Facility::LOG_USER,
         hostname: Some(String::from("R720")),
         process: "dynamic_fan_control".into(),
-        pid: 0,
+        pid: std::process::id(),
     };
 
     let logger = match syslog::unix(formatter) {
