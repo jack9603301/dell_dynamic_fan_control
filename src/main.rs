@@ -272,7 +272,4 @@ fn main() {
 
         sleep(Duration::from_secs(interval));
     }
-
-    let pwm = calc_temp_fan::calc_fan_pwm(45);
-    println!("target temp: 45, pwm: {}", pwm);
 }
