@@ -30,9 +30,9 @@ public:
     static void OutputLogsFatal(std::string str);
 
     DeviceControl *GetInstance(void);
-    bool Register(DeviceInterface_Type interface);
+    bool Register(DeviceControlInterface *interface);
     bool UnRegister(std::string device_name);
-    bool UnRegister(DeviceInterface_Type interface);
+    bool operator()(std::string device_name, uint8_t speed);
 private:
     static DeviceControl *instance;
     std::map<std::string, DeviceInterface_Type> RegisterMaps;

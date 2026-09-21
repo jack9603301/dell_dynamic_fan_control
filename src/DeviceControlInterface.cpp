@@ -1,6 +1,7 @@
 #include "Global.hpp"
 #include "DeviceControlInterface.hpp"
 #include <boost/log/trivial.hpp>
+#include <memory>
 
 DeviceControl *DeviceControl::instance = nullptr;
 
@@ -25,9 +26,9 @@ DeviceControl *DeviceControl::GetInstance(void) {
     return this->instance;
 }
 
-bool DeviceControl::Register(DeviceInterface_Type interface) {
+bool DeviceControl::Register(DeviceControlInterface *interface) {
     if (this->RegisterMaps.empty() || this->RegisterMaps.find(interface->DeviceName()) == this->RegisterMaps.end()) {
-        this->RegisterMaps.emplace(interface->DeviceName(), interface);
+        this->RegisterMaps.emplace(interface->DeviceName(), std::shared_ptr<DeviceControlInterface>(interface));
         return true;
     }
 
@@ -41,9 +42,10 @@ bool DeviceControl::UnRegister(std::string device_name) {
     return false;
 }
 
-bool DeviceControl::UnRegister(DeviceInterface_Type interface) {
-    if (!this->RegisterMaps.empty() && this->RegisterMaps.find(interface->DeviceName()) != this->RegisterMaps.end()) {
-        this->RegisterMaps.erase(interface->DeviceName());
+bool DeviceControl::operator()(std::string device_name, uint8_t speed) {
+    if (!this->RegisterMaps.empty() && this->RegisterMaps.find(device_name) != this->RegisterMaps.end()) {
+        BOOST_ASSERT_MSG(device_name == this->RegisterMaps[device_name]->DeviceName(), "The equipment type and the factory-class interface registration type must be identical!");
+        return (*this->RegisterMaps[device_name])(speed);
     }
     return false;
 }
