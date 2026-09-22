@@ -1,15 +1,14 @@
-#ifndef _HOME_HUB_CENTER_CONFIG
-#define _HOME_HUB_CENTER_CONFIG
+#ifndef _CONFIG_HPP
+#define _CONFIG_HPP
 
+#include "Global.hpp"
+#include "Types.hpp"
 #include <string>
 #include <yaml-cpp/yaml.h>
 #include <unordered_map>
-#include "FanController.hpp"
 #include <map>
 
-class Config {
-public:
-    typedef std::map<std::string, FanController::TemperatureMap_Type> CurveMap_Type;
+class Config { 
 public:
     Config(const Config&) = delete;
     Config& operator=(const Config&) = delete;
@@ -22,7 +21,8 @@ public:
     int GetInt(const std::string& key, int default_val = 0) const;
     double GetDouble(const std::string& key, double default_val = 0.0) const;
     bool GetBool(const std::string& key, bool default_val = false) const;
-    CurveMap_Type LoadTemperatureCurve(void);
+    types::alias::CurveMap LoadTemperatureCurve(void);
+    std::map<uint8_t, types::bases::fan::FanMapInfo> LoadFanMapInfo(void);
 
 private:
     Config(void);
@@ -37,7 +37,7 @@ private:
 
     YAML::Node root_node;
     std::unordered_map<std::string, std::string> flat_config;
-    std::map<std::string, FanController::TemperatureMap_Type> CurveMaps;
+    std::map<std::string, types::alias::TemperatureMap> CurveMaps;
 };
 
-#endif   // #ifndef _HOME_HUB_CENTER_CONFIG
+#endif   // #ifndef _CONFIG_HPP

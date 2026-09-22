@@ -3,4 +3,6 @@
 
 #define TAG "DynamicFanControl"
 
+#include "Types.hpp"
+
 #endif // #ifndef GLOBAL_HPP

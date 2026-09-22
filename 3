@@ -101,13 +101,12 @@ bool FanController::MonitorTemperature(void) {
     const auto fan_map_result = config->LoadFanMapInfo();
     const auto curve_map = config->LoadTemperatureCurve();
 
-    std::thread monitor_thread([this, &fan_num, &interval, &fan_map_result, &curve_map]() {
-        auto changed_fan_speed = [this](uint8_t fanid, uint8_t pwm) {
+    std::thread monitor_thread([this, fan_num, interval, fan_map_result, curve_map]() {
+        auto changed_fan_speed = [](uint8_t fan_id, uint8_t pwm) {
             DeviceControl *device_control = DeviceControl::GetInstance();
 
-            std::string device = this->config->GetString("setting.device");
-            OutputLogsInfo(std::format("Send a command to the Fan Control Unit of Device {} to force the speed of Fan {} to {}.", device, fanid, pwm));
-            (*device_control)(device, fanid, pwm);
+            std::string device = config->GetString("setting.device");
+            device_control();
         };
 
         OutputLogsInfo("Temperature monitor thread started");

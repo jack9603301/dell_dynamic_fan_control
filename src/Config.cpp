@@ -1,4 +1,5 @@
 #include "Global.hpp"
+#include "Types.hpp"
 #include <boost/log/trivial.hpp>
 #include "Config.hpp"
 
@@ -57,33 +58,46 @@ void Config::FlattenNode(const YAML::Node& node, const std::string& prefix, std:
 }
 
 YAML::Node Config::GetNode(const std::string& key) const {
-    // Starting from the root node, search level by level along the path separated by dots.
-    YAML::Node node = root_node;
-    std::string remaining = key;
+    std::vector<std::string> key_segments;
+    std::string current_segment;
+    for (char c : key) {
+        if (c == '.') {
+            if (!current_segment.empty()) {
+                key_segments.push_back(current_segment);
+                current_segment.clear();
+            }
+        } else {
+            current_segment += c;
+        }
+    }
+    if (!current_segment.empty()) {
+        key_segments.push_back(current_segment);
+    }
 
-    while (!remaining.empty()) {
-        // Find the next breakpoint in the current level
-        auto dot_pos = remaining.find('.');
-        std::string segment = remaining.substr(0, dot_pos);
-
-        // If the current node is not a Map or has no child key, return an empty node.
-        if (!node.IsMap() || !node[segment]) {
+    YAML::Node current = YAML::Clone(root_node);
+    for (const std::string& seg : key_segments) {
+        if (!current.IsDefined()) {
             return YAML::Node();
         }
 
-        // Descend to child node
-        node = node[segment];
-
-        // If the end of the path has been reached, return to the current node.
-        if (dot_pos == std::string::npos) {
-            break;
+        if (current.IsMap() && current[seg].IsDefined()) {
+            current = YAML::Clone(current[seg]);
+            continue;
         }
 
-        // Continue processing the remaining paths
-        remaining = remaining.substr(dot_pos + 1);
+        if (current.IsSequence()) {
+            try {
+                size_t idx = std::stoul(seg);
+                if (idx < current.size()) {
+                    current = YAML::Clone(current[idx]);
+                    continue;
+                }
+            } catch (...) {}
+        }
+        return YAML::Node();
     }
 
-    return node;
+    return current;
 }
 
 std::string Config::GetString(const std::string& key, const std::string& default_val) const {
@@ -204,12 +218,12 @@ void Config::SetBool(const std::string& key, bool value) {
     }
 }
 
-Config::CurveMap_Type Config::LoadTemperatureCurve(void) {
-    CurveMap_Type curve_result;
+types::alias::CurveMap Config::LoadTemperatureCurve(void) {
+    types::alias::CurveMap curve_result;
 
     // Get the root node of the temperature curve from the configuration.
     const YAML::Node temp_points_node = GetNode("temperature_points");
-    if (!temp_points_node.IsSequence()) {
+    if (!temp_points_node.IsDefined() || !temp_points_node.IsSequence()) {
         OutputLogsFatal("temperature_points is not a valid sequence in config");
         return curve_result;
     }
@@ -233,7 +247,7 @@ Config::CurveMap_Type Config::LoadTemperatureCurve(void) {
         }
 
         // Analyze all temperature-speed pairs on the current curve.
-        FanController::TemperatureMap_Type current_curve;
+        types::alias::TemperatureMap current_curve;
         for (std::size_t pair_idx = 0; pair_idx < curve_map_node.size(); ++pair_idx) {
             const YAML::Node pair_node = curve_map_node[pair_idx];
             const int temp = pair_node["temperature"].as<int>(-1);
@@ -267,3 +281,90 @@ Config::CurveMap_Type Config::LoadTemperatureCurve(void) {
 
     return curve_result;
 }
+
+std::map<uint8_t, types::bases::fan::FanMapInfo> Config::LoadFanMapInfo(void) {
+    std::map<uint8_t, types::bases::fan::FanMapInfo> fan_map_result;
+    const YAML::Node fan_map_node = GetNode("setting.fan_map");
+
+    // Validate the validity of the configuration node.
+    if (!fan_map_node.IsSequence()) {
+        OutputLogsWarning("Invalid config: setting.fan_map is not a valid sequence");
+        return fan_map_result;
+    }
+
+    // Iterate through each fan mapping configuration item.
+    for (const YAML::Node& fan_item : fan_map_node) {
+        types::bases::fan::FanMapInfo current_fan;
+
+        if (!fan_item["id"].IsDefined()) {
+            OutputLogsWarning("Skipping fan map item: missing required 'id' field");
+            continue;
+        }
+
+        const uint8_t fan_id = static_cast<uint8_t>(fan_item["id"].as<int>());
+        current_fan.id = fan_id;
+
+        if (fan_item["static_fan_map"].IsDefined()) {
+            current_fan.type = types::bases::fan::FanMapInfo::MapType::STATIC;
+            uint8_t static_speed = static_cast<uint8_t>(fan_item["static_fan_map"].as<int>(0));
+            current_fan.value = types::bases::fan::value_map::StaticFanMapInfo{static_speed};
+            OutputLogsInfo(std::format("Parsed static fan rule: id={}, speed={}", fan_id, static_speed));
+        }
+        else if (fan_item["dynamic_cpu_chip"].IsDefined() && fan_item["dynamic_fan_speed_map"].IsDefined()) {
+            // Advanced Mapping
+            current_fan.type = types::bases::fan::FanMapInfo::MapType::DYNAMIC;
+            std::string cpu_chip = fan_item["dynamic_cpu_chip"].as<std::string>("");
+            std::string speed = fan_item["dynamic_fan_speed_map"].as<std::string>("");
+            current_fan.value = types::bases::fan::value_map::DynamicFanMapInfo{cpu_chip, speed};
+            OutputLogsInfo(std::format("Parsed dynamic fan rule: id={}, chip={}, speed={}", 
+                fan_id, cpu_chip, speed));
+        }
+        else if (fan_item["dynamic_cpu_chip"].IsDefined() && fan_item["advanced_speed_map"].IsDefined()) {
+            current_fan.type = types::bases::fan::FanMapInfo::MapType::ADVANCED;
+            std::map<std::string, types::bases::fan::value_map::AdvancedFanMapInfo> adv_map;
+            const YAML::Node& adv_node = fan_item["advanced_speed_map"];
+
+            if (!adv_node.IsSequence()) {
+                OutputLogsWarning(std::format("Skipping advanced fan item id={}: advanced_speed_map is not a sequence", fan_id));
+                continue;
+            }
+            
+            std::vector<types::bases::fan::value_map::AdvancedFanMapInfo> adv_list;
+            for (std::size_t adv_idx = 0; adv_idx < adv_node.size(); ++adv_idx) {
+                const YAML::Node& adv_entry = adv_node[adv_idx];
+                types::bases::fan::value_map::AdvancedFanMapInfo adv_info;
+                adv_info.refer = static_cast<uint8_t>(adv_entry["refer"].as<int>(0));
+                
+                // Read the turn_off_refer switch (optional)
+                if (adv_entry["turn_off_refer"].IsDefined()) {
+                    adv_info.turn_off_refer.type = types::bases::fan::value_map::AdvancedFanMapInfo::OffRefer::ValueType::ON;
+                    adv_info.turn_off_refer.refer = static_cast<uint8_t>(adv_entry["turn_off_refer"].as<int>(0));
+                } else {
+                    adv_info.turn_off_refer.type = types::bases::fan::value_map::AdvancedFanMapInfo::OffRefer::ValueType::OFF;
+                    adv_info.turn_off_refer.refer = 0;
+                }
+
+                adv_list.push_back(std::move(adv_info));
+            }
+
+            current_fan.value = std::move(adv_list);
+            OutputLogsInfo(std::format("Parsed advanced fan rule: id={}, entries={}", fan_id, adv_list.size()));
+        }
+        else {
+            OutputLogsWarning(std::format("Skipping fan rule id={}: no valid type (static/dynamic/advanced)", fan_id));
+            continue;
+        }
+
+        // Add result mapping
+        fan_map_result.emplace(fan_id, std::move(current_fan));
+    }
+
+    // Final Statistics Log
+    if (fan_map_result.empty()) {
+        OutputLogsWarning("No valid fan rules loaded from config");
+    } else {
+        OutputLogsInfo(std::format("Total parsed fan rules: {}", fan_map_result.size()));
+    }
+
+    return fan_map_result;
+};

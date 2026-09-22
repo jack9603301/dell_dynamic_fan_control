@@ -8,11 +8,9 @@
 #include <boost/program_options.hpp>
 #include <iostream>
 #include "FanController.hpp"
+#include "Devices/Devices.hpp"
 
 namespace params_option = boost::program_options;
-
-bool LoadTemperatureMaps(FanController &fan_controller) {
-}
 
 int main(int argc, char **argv) {
     // Log system initialization
@@ -100,13 +98,21 @@ int main(int argc, char **argv) {
                           << (config->GetBool("verbose", false) ? "Enabled"
                                                                 : "Disabled");
     FanController fan_controller;
-    Config::CurveMap_Type tempcurve= config->LoadTemperatureCurve();
+    types::alias::CurveMap tempcurve = config->LoadTemperatureCurve();
 
     // Set temperature profile
     for (auto [curve_name, temperature_points] : tempcurve) {
         for (auto [temperature, speed] : temperature_points) {
             fan_controller.InsertTemperaturePoint(curve_name, temperature, speed);
         }
+    }
+
+    // Automatically register devices for the factory.
+    devices::tools::AutoRegister();
+
+    // Temperature monitoring
+    if (!fan_controller.MonitorTemperature()) {
+        return 1;
     }
 
     return 0;

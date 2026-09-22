@@ -1,20 +1,21 @@
-#ifndef __FAN_SPEED_CALC_HPP
-#define __FAN_SPEED_CALC_HPP
+#ifndef __FAN_CONTROLLER_HPP
+#define __FAN_CONTROLLER_HPP
 
+#include "Global.hpp"
 #include <cstdint>
 #include <map>
 #include <string>
+#include "Config.hpp"
 
-class FanController {
+class FanController { 
 public:
-    typedef std::map<uint8_t, uint8_t> TemperatureMap_Type;
-public:
-    FanController(void) = default;
+    FanController(void);
     FanController &operator=(const FanController &obj) = default; 
     
     void InsertTemperaturePoint(std::string curve_name, uint8_t temperature, uint8_t speed);
     uint8_t Inter(std::string curve_name, uint8_t target);
     uint8_t GetSpeedPWM(std::string curve_name, uint8_t temperature);
+    bool MonitorTemperature(void);
 public:
     static uint8_t lineInter(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, uint8_t x);
 private:
@@ -23,8 +24,9 @@ private:
     static void OutputLogsFatal(std::string str);
 
 public:
-    std::map<std::string, TemperatureMap_Type> CurveMaps;
+    std::map<std::string, types::alias::TemperatureMap> CurveMaps;
+    Config *config;
 };
 
 
-#endif // #ifndef __FAN_SPEED_CALC_HPP
+#endif // #ifndef __FAN_CONTROLLER_HPP

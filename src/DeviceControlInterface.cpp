@@ -18,12 +18,26 @@ void DeviceControl::OutputLogsFatal(std::string str) {
     BOOST_LOG_TRIVIAL(fatal) << "[" << TAG << "] " << str;
 }
 
+void DeviceControlInterface::OutputLogsInfo(std::string str) {
+    BOOST_LOG_TRIVIAL(info) << "[" << TAG << "] " << str;
+}
+
+void DeviceControlInterface::OutputLogsWarning(std::string str) {
+    BOOST_LOG_TRIVIAL(fatal) << "[" << TAG << "] " << str;
+}
+
+
+void DeviceControlInterface::OutputLogsFatal(std::string str) {
+    BOOST_LOG_TRIVIAL(fatal) << "[" << TAG << "] " << str;
+}
+
 DeviceControl *DeviceControl::GetInstance(void) {
-    if (this->instance == nullptr) {
-        this->instance = new DeviceControl;
+    if (instance == nullptr) {
+        instance = new DeviceControl;
     }
 
-    return this->instance;
+    OutputLogsInfo("Get the instance address of the Device Control module");
+    return instance;
 }
 
 bool DeviceControl::Register(DeviceControlInterface *interface) {
@@ -42,10 +56,10 @@ bool DeviceControl::UnRegister(std::string device_name) {
     return false;
 }
 
-bool DeviceControl::operator()(std::string device_name, uint8_t speed) {
+bool DeviceControl::operator()(std::string device_name, uint8_t fanid, uint8_t speed) {
     if (!this->RegisterMaps.empty() && this->RegisterMaps.find(device_name) != this->RegisterMaps.end()) {
         BOOST_ASSERT_MSG(device_name == this->RegisterMaps[device_name]->DeviceName(), "The equipment type and the factory-class interface registration type must be identical!");
-        return (*this->RegisterMaps[device_name])(speed);
+        return (*this->RegisterMaps[device_name])(fanid, speed);
     }
     return false;
 }

@@ -12,6 +12,7 @@ temperature_points:
 setting:
   fan_num: 6
   interval: 300
+  device: dell
   fan_map:
     - id: 0
       static_fan_map: 15
