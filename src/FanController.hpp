@@ -26,6 +26,7 @@ private:
 public:
     std::map<std::string, types::alias::TemperatureMap> CurveMaps;
     Config *config;
+    std::map<uint8_t, types::bases::fan::value_map::AdvancedFanMapInfo> fanmap_advanced_rules;
 };
 
 

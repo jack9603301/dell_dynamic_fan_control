@@ -1,0 +1,82 @@
+temperature_points:
+  - name: "Silent"
+    map:
+      - temperature: 30
+        fan_speed: 10
+      - temperature: 45
+        fan_speed: 20
+      - temperature: 60
+        fan_speed: 40
+      - temperature: 70
+        fan_speed: 55
+      - temperature: 80
+        fan_speed: 70
+      - temperature: 90
+        fan_speed: 90
+  - name: "High-cooling"
+    map:
+      - temperature: 30
+        fan_speed: 20
+      - temperature: 45
+        fan_speed: 40
+      - temperature: 60
+        fan_speed: 70
+      - temperature: 70
+        fan_speed: 80
+      - temperature: 80
+        fan_speed: 90
+      - temperature: 90
+        fan_speed: 100
+setting:
+  fan_num: 6
+  interval: 1
+  device: dell
+  fan_map:
+    - id: 0
+      dynamic_cpu_chip: "coretemp-isa-0000"
+      advanced_speed_map:
+        - speed_map: "Silent"
+          refer: 0
+        - speed_map: "High-cooling"
+          refer: 65
+          turn_off_refer: 50
+    - id: 1
+      dynamic_cpu_chip: "coretemp-isa-0000"
+      advanced_speed_map:
+        - speed_map: "Silent"
+          refer: 0
+        - speed_map: "High-cooling"
+          refer: 65
+          turn_off_refer: 50
+    - id: 2
+      dynamic_cpu_chip: "coretemp-isa-0000"
+      advanced_speed_map:
+        - speed_map: "Silent"
+          refer: 0
+        - speed_map: "High-cooling"
+          refer: 65
+          turn_off_refer: 50
+    - id: 3
+      dynamic_cpu_chip: "coretemp-isa-0001"
+      advanced_speed_map:
+        - speed_map: "Silent"
+          refer: 0
+        - speed_map: "High-cooling"
+          refer: 65
+          turn_off_refer: 50
+    - id: 4
+      dynamic_cpu_chip: "coretemp-isa-0001"
+      advanced_speed_map:
+        - speed_map: "Silent"
+          refer: 0
+        - speed_map: "High-cooling"
+          refer: 65
+          turn_off_refer: 50
+    - id: 5
+      dynamic_cpu_chip: "coretemp-isa-0001"
+      advanced_speed_map:
+        - speed_map: "Silent"
+          refer: 0
+        - speed_map: "High-cooling"
+          refer: 65
+          turn_off_refer: 50

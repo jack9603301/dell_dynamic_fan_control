@@ -4,6 +4,7 @@
 #include <boost/log/trivial.hpp>
 #include <format>
 #include "Config.hpp"
+#include "Types.hpp"
 #include <boost/assert.hpp>
 #include <sensors/sensors.h>
 #include <thread>
@@ -58,13 +59,8 @@ uint8_t FanController::Inter(std::string curve_name, uint8_t target) {
 
     BOOST_ASSERT_MSG(!CurveMaps[curve_name].empty(), "Temperature profile configuration data does not exist.");
 
-    auto it = CurveMaps[curve_name].begin();
-    uint8_t prev_temp = it->first;
-    uint8_t prev_speed = it->second;
-
-    if (target <= prev_temp) {
-        return prev_speed;
-    }
+    uint8_t prev_temp = 0;
+    uint8_t prev_speed = 0;
 
     for (auto [curr_temp, curr_speed] : this->CurveMaps[curve_name]) {
         if (target <= curr_temp) {
@@ -106,8 +102,12 @@ bool FanController::MonitorTemperature(void) {
             DeviceControl *device_control = DeviceControl::GetInstance();
 
             std::string device = this->config->GetString("setting.device");
-            OutputLogsInfo(std::format("Send a command to the Fan Control Unit of Device {} to force the speed of Fan {} to {}.", device, fanid, pwm));
-            (*device_control)(device, fanid, pwm);
+            if (device.empty()) {
+                OutputLogsWarning(std::format("Due to a lack of target device type, it is impossible to send a forced override command to control the speed of fan {}, Speed = {}", fanid, pwm));
+            } else {
+                OutputLogsInfo(std::format("Send a command to the Fan Control Unit of Device {} to force the speed of Fan {} to {}.", device, fanid, pwm));
+                (*device_control)(device, fanid, pwm);
+            }
         };
 
         OutputLogsInfo("Temperature monitor thread started");
@@ -123,9 +123,6 @@ bool FanController::MonitorTemperature(void) {
                 std::string chip_name;
                 if (::sensors_snprintf_chip_name(chip_name_buf, sizeof(chip_name_buf), chip) > 0) {
                     chip_name = chip_name_buf;
-                    if (chip_name.find("coretemp") == std::string::npos) {
-                        continue;
-                    }
                 } else {
                     continue;
                 }
@@ -136,9 +133,15 @@ bool FanController::MonitorTemperature(void) {
 
                 while ((feature = ::sensors_get_features(chip, &feature_idx)) != nullptr) {
                     feature_idx++;
-                    if (feature->type != SENSORS_FEATURE_TEMP) continue;
-                    double temp_val;
-                    if (sensors_get_value(chip, feature->number, &temp_val) == 0) {
+                    if (feature->type != SENSORS_FEATURE_TEMP) {
+                        continue;
+                    }
+
+                    
+                    sensors_subfeature_type sub_type = sensors_subfeature_type::SENSORS_SUBFEATURE_TEMP_INPUT;
+                    const sensors_subfeature* sub = ::sensors_get_subfeature(chip, feature, sub_type);
+                    double temp_val = 0;
+                    if (sensors_get_value(chip, sub->number, &temp_val) == 0) {
                         uint8_t core_temp = static_cast<uint8_t>(std::round(temp_val));
                         if (core_temp > chip_max_temp) {
                             chip_max_temp = core_temp;
@@ -155,7 +158,6 @@ bool FanController::MonitorTemperature(void) {
             // Calculate PWM based on mapping rules.
             for (uint8_t fan_id = 0; fan_id < static_cast<uint8_t>(fan_num); ++fan_id) {
                 uint8_t target_pwm = 0;
-                bool use_default_curve = true;
 
                 // Match the mapping rules for the current fan.
                 if (fan_map_result.count(fan_id)) {
@@ -163,16 +165,14 @@ bool FanController::MonitorTemperature(void) {
                     switch (fan_info.type) {
                     case types::bases::fan::FanMapInfo::MapType::STATIC: {
                             const auto& static_val = std::get<types::bases::fan::value_map::StaticFanMapInfo>(fan_info.value);
-                            target_pwm = static_val.speed;
+                            target_pwm = static_val.speed_map;
                             OutputLogsInfo(std::format("Fan {}: Static mapping, speed = {}", fan_id, target_pwm));
-                            use_default_curve = false;
                             break;
                         }
                     case types::bases::fan::FanMapInfo::MapType::DYNAMIC: {
                             const auto& dynamic_val = std::get<types::bases::fan::value_map::DynamicFanMapInfo>(fan_info.value);
                             const std::string& target_chip = dynamic_val.cpu_chip;
-                            const std::string& speed_map_name = dynamic_val.speed;
-                            OutputLogsInfo(speed_map_name);
+                            const std::string& speed_map_name = dynamic_val.speed_map;
 
                             // Match detected CPU chips
                             if (chip_temp_map.count(target_chip)) {
@@ -180,69 +180,91 @@ bool FanController::MonitorTemperature(void) {
                                 target_pwm = this->GetSpeedPWM(speed_map_name, chip_temp);
                                 OutputLogsInfo(std::format("Fan {}: Dynamic mapping, chip = {}, curve = {}, PWM = {}", 
                                     fan_id, target_chip, speed_map_name, target_pwm));
-                                use_default_curve = false;
                             } else {
                                 OutputLogsWarning(std::format("Fan {}: Dynamic chip {} not found, fallback to default curve", fan_id, target_chip));
                             }
                             break;
                         }
                     case types::bases::fan::FanMapInfo::MapType::ADVANCED: {
-                            const auto& adv_list = std::get<std::vector<types::bases::fan::value_map::AdvancedFanMapInfo>>(fan_info.value);
-                            const std::string& target_chip = "";
+                            const auto& adv_meta = std::get<types::bases::fan::value_map::AdvancedFanMapMetaInfo>(fan_info.value);
+                            const auto& adv_list = adv_meta.speed_maps;
+                            const std::string& target_chip = adv_meta.cpu_chip;
 
                             if (!target_chip.empty() && !chip_temp_map.count(target_chip)) {
                                 OutputLogsWarning(std::format("Fan {}: Advanced chip {} not found, fallback to default", fan_id, target_chip));
                                 break;
                             }
                             uint8_t current_temp = target_chip.empty() ? 0 : chip_temp_map[target_chip];
+                            bool dynamic_match = true;
 
-                            // Handling the 'refer' threshold for advanced mappings: Identify the highest-priority mapping corresponding to the current temperature.
-                            uint8_t max_refer = 0;
-                            std::string selected_curve = "default";
-                            bool need_update_advance = false;
+                            auto temperature_policy = [this, &changed_fan_speed, &current_temp, &advanced_speed_cache, &fan_id, &target_pwm, adv_list, adv_meta](bool allow_descent = true, types::bases::fan::value_map::AdvancedFanMapInfo *descent_lock = nullptr) {
+                                // Handling the 'refer' threshold for advanced mappings: Identify the highest-priority mapping corresponding to the current temperature.
+                                uint8_t max_refer = 0;
+                                std::string selected_curve = "default";
+                                bool need_update_advance = false;
 
-                            // Advanced mapping logic: Iterate through the reference data and match the rule corresponding to the current temperature.
-                            for (const auto& adv : adv_list) {
-                                if (current_temp >= adv.refer && adv.refer > max_refer) {
-                                    max_refer = adv.refer;
-                                    selected_curve = "default";
-
-                                    // Read the turn_off_refer setting (optional).
-                                    if (adv.turn_off_refer.type == types::bases::fan::value_map::AdvancedFanMapInfo::OffRefer::ValueType::ON) {
+                                // Advanced mapping logic: Iterate through the reference data and match the rule corresponding to the current temperature.
+                                for (const auto& adv : adv_list) {
+                                    if (current_temp >= adv.refer && current_temp >= max_refer) {
+                                        if (!allow_descent && descent_lock != nullptr) {
+                                            // Execute state machine descent strategy lock.
+                                            if (current_temp <= descent_lock->refer) {
+                                                need_update_advance = false;
+                                                continue;
+                                            }
+                                        }
+                                        max_refer = adv.refer;
+                                        selected_curve = adv.speed_map;
                                         advanced_speed_cache[fan_id] = adv;
-                                    } else {
-                                        advanced_speed_cache.erase(fan_id);
+                                            need_update_advance = true;
                                     }
-                                    need_update_advance = true;
+                                }
+
+                                if (need_update_advance && max_refer >= 0) {
+                                    this->fanmap_advanced_rules.emplace(fan_id, advanced_speed_cache[fan_id]);
+                                    target_pwm = this->GetSpeedPWM(selected_curve, current_temp);
+                                    if (!allow_descent && descent_lock != nullptr) {
+                                        OutputLogsInfo(std::format("Fan {}: Advanced mapping configuration locked, Reference = {}, Curve = {}, PWM = {}",
+                                            fan_id, max_refer, selected_curve, target_pwm));
+                                    } else {
+                                        OutputLogsInfo(std::format("Fan {}: Advanced mapping, refer = {}, curve = {}, PWM = {}", 
+                                            fan_id, max_refer, selected_curve, target_pwm));
+                                    }
+                                }
+                            };
+
+
+                            if (this->fanmap_advanced_rules.find(fan_id) != this->fanmap_advanced_rules.end()) {
+                                // Existing configurations exist in the system.
+                                types::bases::fan::value_map::AdvancedFanMapInfo system_adv_rule = this->fanmap_advanced_rules[fan_id];
+
+                                if (system_adv_rule.turn_off_refer.type == types::bases::fan::value_map::AdvancedFanMapInfo::OffRefer::ValueType::ON && 
+                                        current_temp <= system_adv_rule.turn_off_refer.refer) {
+                                    this->fanmap_advanced_rules.erase(fan_id);   // Exit conditions met; clearing configuration lock.
+                                    OutputLogsInfo(std::format("Fan {} meets the shutdown/exit conditions for Rule {}, the configuration lock for the advanced mapping rule is cleared.", fan_id, system_adv_rule.speed_map));
+                                    dynamic_match = true;
+                                } else if(system_adv_rule.turn_off_refer.type == types::bases::fan::value_map::AdvancedFanMapInfo::OffRefer::ValueType::OFF &&
+                                        current_temp <= system_adv_rule.refer) {
+                                    this->fanmap_advanced_rules.erase(fan_id);   // Exit conditions met; clearing configuration lock.
+                                    OutputLogsInfo(std::format("Fan {} meets the shutdown/exit conditions for Rule {}, the configuration lock for the advanced mapping rule is cleared.", fan_id, system_adv_rule.speed_map));
+                                } else {
+                                    temperature_policy(false, &system_adv_rule);
+                                    dynamic_match = false;
                                 }
                             }
 
-                            if (need_update_advance && max_refer > 0) {
-                                target_pwm = this->GetSpeedPWM(selected_curve, current_temp);
-                                OutputLogsInfo(std::format("Fan {}: Advanced mapping, refer = {}, curve = {}, PWM = {}", 
-                                    fan_id, max_refer, selected_curve, target_pwm));
-                                use_default_curve = false;
+                            if (dynamic_match) {
+                                temperature_policy(false, nullptr);
                             }
                             break;
                         }
                     default:
                         break;
                     }
-                }
 
-                // When no mapping rule exists, the default temperature profile is used.
-                if (use_default_curve) {
-                    uint8_t default_temp = 0;
-                    for (const auto& [chip, temp] : chip_temp_map) {
-                        if (temp > default_temp) default_temp = temp;
-                    }
-                    target_pwm = this->GetSpeedPWM("default", default_temp);
-                    OutputLogsInfo(std::format("Fan {}: Default mapping, temp = {}, PWM = {}", fan_id, default_temp, target_pwm));
-                }
-
-                changed_fan_speed(fan_id, target_pwm);
-
-                OutputLogsInfo(std::format("Fan {}: Set PWM to {}", fan_id, target_pwm));
+                    changed_fan_speed(fan_id, target_pwm);
+                    OutputLogsInfo(std::format("Fan {}: Set PWM to {}", fan_id, target_pwm));
+                } 
             }
             std::this_thread::sleep_for(std::chrono::seconds(interval));
         }

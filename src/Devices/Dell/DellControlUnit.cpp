@@ -19,7 +19,7 @@ bool DellControlUnit::operator()(uint8_t fanid, uint8_t speed) {
     );
     // Set target fan PWM
     std::string set_fan_cmd = std::format(
-    "ipmitool raw 0x30 0x30 0x02 {} {}", fanid_hex, speed_hex
+    "ipmitool raw 0x30 0x30 0x02 {} {} > /dev/null 2>&1", fanid_hex, speed_hex
     ); 
 
     // Execute the command and return the result.

@@ -97,7 +97,7 @@ YAML::Node Config::GetNode(const std::string& key) const {
         return YAML::Node();
     }
 
-    return current;
+    return YAML::Clone(current);
 }
 
 std::string Config::GetString(const std::string& key, const std::string& default_val) const {
@@ -230,7 +230,7 @@ types::alias::CurveMap Config::LoadTemperatureCurve(void) {
 
     // Iterate through all temperature curve entries.
     for (std::size_t idx = 0; idx < temp_points_node.size(); idx++) {
-        const YAML::Node curve_entry = temp_points_node[idx];
+        const YAML::Node curve_entry = YAML::Clone(temp_points_node[idx]);
 
         // Extract curve name
         const std::string curve_name = curve_entry["name"].as<std::string>("");
@@ -240,7 +240,7 @@ types::alias::CurveMap Config::LoadTemperatureCurve(void) {
         }
 
         // Extract the temperature-speed mapping list for the current curve.
-        const YAML::Node curve_map_node = curve_entry["map"];
+        const YAML::Node curve_map_node = YAML::Clone(curve_entry["map"]);
         if (!curve_map_node.IsSequence()) {
             OutputLogsWarning("Curve '" + curve_name + "' has invalid 'map' field (not a sequence)");
             continue;
@@ -250,8 +250,8 @@ types::alias::CurveMap Config::LoadTemperatureCurve(void) {
         types::alias::TemperatureMap current_curve;
         for (std::size_t pair_idx = 0; pair_idx < curve_map_node.size(); ++pair_idx) {
             const YAML::Node pair_node = curve_map_node[pair_idx];
-            const int temp = pair_node["temperature"].as<int>(-1);
-            const int speed = pair_node["fan_speed"].as<int>(-1);
+            const int temp = pair_node["temperature"].as<int>();
+            const int speed = pair_node["fan_speed"].as<int>();
 
             if (temp >=0 && temp <=255 && speed >=0 && speed <=255) {
                 current_curve.emplace(static_cast<uint8_t>(temp), static_cast<uint8_t>(speed));
@@ -265,7 +265,7 @@ types::alias::CurveMap Config::LoadTemperatureCurve(void) {
 
         // Store the valid curve in the return result.
         if (!current_curve.empty()) {
-            curve_result[curve_name] = std::move(current_curve);
+            curve_result[curve_name] = current_curve;
             OutputLogsInfo(std::format("Loaded temperature curve '{}' with {} pairs", curve_name, current_curve.size()));
         } else {
             OutputLogsWarning("Curve '" + curve_name + "' has no valid temperature-speed pairs");
@@ -282,8 +282,8 @@ types::alias::CurveMap Config::LoadTemperatureCurve(void) {
     return curve_result;
 }
 
-std::map<uint8_t, types::bases::fan::FanMapInfo> Config::LoadFanMapInfo(void) {
-    std::map<uint8_t, types::bases::fan::FanMapInfo> fan_map_result;
+types::alias::FanMap Config::LoadFanMapInfo(void) {
+    types::alias::FanMap fan_map_result;
     const YAML::Node fan_map_node = GetNode("setting.fan_map");
 
     // Validate the validity of the configuration node.
@@ -304,17 +304,17 @@ std::map<uint8_t, types::bases::fan::FanMapInfo> Config::LoadFanMapInfo(void) {
         const uint8_t fan_id = static_cast<uint8_t>(fan_item["id"].as<int>());
         current_fan.id = fan_id;
 
-        if (fan_item["static_fan_map"].IsDefined()) {
+        if (fan_item["static_speed_map"].IsDefined()) {
             current_fan.type = types::bases::fan::FanMapInfo::MapType::STATIC;
-            uint8_t static_speed = static_cast<uint8_t>(fan_item["static_fan_map"].as<int>(0));
+            uint8_t static_speed = static_cast<uint8_t>(fan_item["static_speed_map"].as<int>(0));
             current_fan.value = types::bases::fan::value_map::StaticFanMapInfo{static_speed};
             OutputLogsInfo(std::format("Parsed static fan rule: id={}, speed={}", fan_id, static_speed));
         }
-        else if (fan_item["dynamic_cpu_chip"].IsDefined() && fan_item["dynamic_fan_speed_map"].IsDefined()) {
+        else if (fan_item["dynamic_cpu_chip"].IsDefined() && fan_item["dynamic_speed_map"].IsDefined()) {
             // Advanced Mapping
             current_fan.type = types::bases::fan::FanMapInfo::MapType::DYNAMIC;
             std::string cpu_chip = fan_item["dynamic_cpu_chip"].as<std::string>("");
-            std::string speed = fan_item["dynamic_fan_speed_map"].as<std::string>("");
+            std::string speed = fan_item["dynamic_speed_map"].as<std::string>("");
             current_fan.value = types::bases::fan::value_map::DynamicFanMapInfo{cpu_chip, speed};
             OutputLogsInfo(std::format("Parsed dynamic fan rule: id={}, chip={}, speed={}", 
                 fan_id, cpu_chip, speed));
@@ -322,7 +322,7 @@ std::map<uint8_t, types::bases::fan::FanMapInfo> Config::LoadFanMapInfo(void) {
         else if (fan_item["dynamic_cpu_chip"].IsDefined() && fan_item["advanced_speed_map"].IsDefined()) {
             current_fan.type = types::bases::fan::FanMapInfo::MapType::ADVANCED;
             std::map<std::string, types::bases::fan::value_map::AdvancedFanMapInfo> adv_map;
-            const YAML::Node& adv_node = fan_item["advanced_speed_map"];
+            const YAML::Node& adv_node = YAML::Clone(fan_item["advanced_speed_map"]);
 
             if (!adv_node.IsSequence()) {
                 OutputLogsWarning(std::format("Skipping advanced fan item id={}: advanced_speed_map is not a sequence", fan_id));
@@ -330,11 +330,14 @@ std::map<uint8_t, types::bases::fan::FanMapInfo> Config::LoadFanMapInfo(void) {
             }
             
             std::vector<types::bases::fan::value_map::AdvancedFanMapInfo> adv_list;
+            types::bases::fan::value_map::AdvancedFanMapMetaInfo adv_meta;
             for (std::size_t adv_idx = 0; adv_idx < adv_node.size(); ++adv_idx) {
-                const YAML::Node& adv_entry = adv_node[adv_idx];
+                const YAML::Node& adv_entry = YAML::Clone(adv_node[adv_idx]);
                 types::bases::fan::value_map::AdvancedFanMapInfo adv_info;
+
+                adv_info.speed_map = adv_entry["speed_map"].as<std::string>("default");
                 adv_info.refer = static_cast<uint8_t>(adv_entry["refer"].as<int>(0));
-                
+
                 // Read the turn_off_refer switch (optional)
                 if (adv_entry["turn_off_refer"].IsDefined()) {
                     adv_info.turn_off_refer.type = types::bases::fan::value_map::AdvancedFanMapInfo::OffRefer::ValueType::ON;
@@ -344,10 +347,13 @@ std::map<uint8_t, types::bases::fan::FanMapInfo> Config::LoadFanMapInfo(void) {
                     adv_info.turn_off_refer.refer = 0;
                 }
 
-                adv_list.push_back(std::move(adv_info));
+                adv_list.push_back(adv_info);
             }
 
-            current_fan.value = std::move(adv_list);
+            std::string cpu_chip = fan_item["dynamic_cpu_chip"].as<std::string>("");
+            adv_meta.cpu_chip = cpu_chip;
+            adv_meta.speed_maps = adv_list;
+            current_fan.value = adv_meta;
             OutputLogsInfo(std::format("Parsed advanced fan rule: id={}, entries={}", fan_id, adv_list.size()));
         }
         else {
@@ -356,7 +362,7 @@ std::map<uint8_t, types::bases::fan::FanMapInfo> Config::LoadFanMapInfo(void) {
         }
 
         // Add result mapping
-        fan_map_result.emplace(fan_id, std::move(current_fan));
+        fan_map_result.emplace(fan_id, current_fan);
     }
 
     // Final Statistics Log

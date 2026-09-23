@@ -16,6 +16,7 @@ namespace fan {
 namespace value_map {
 
 struct AdvancedFanMapInfo {
+    std::string speed_map;
     uint8_t refer;
     struct OffRefer{
         enum class ValueType{
@@ -26,13 +27,18 @@ struct AdvancedFanMapInfo {
     }turn_off_refer;
 };
 
+struct AdvancedFanMapMetaInfo {
+    std::string cpu_chip;
+    std::vector<AdvancedFanMapInfo> speed_maps;
+};
+
 struct StaticFanMapInfo {
-    uint8_t speed;
+    uint8_t speed_map;
 };
 
 struct DynamicFanMapInfo {
     std::string cpu_chip;
-    std::string speed;
+    std::string speed_map;
 };
 
 }  // namespace value_map
@@ -44,7 +50,7 @@ struct FanMapInfo {
         DYNAMIC,
         ADVANCED,
     }type;
-    std::variant<value_map::StaticFanMapInfo, value_map::DynamicFanMapInfo, std::vector<value_map::AdvancedFanMapInfo>> value;
+    std::variant<value_map::StaticFanMapInfo, value_map::DynamicFanMapInfo, value_map::AdvancedFanMapMetaInfo> value;
 };
 
 }  // namespace fan
@@ -55,6 +61,7 @@ namespace alias {
 typedef std::map<uint8_t, uint8_t> TemperatureMap;
 typedef std::map<std::string, TemperatureMap> CurveMap;
 typedef std::shared_ptr<DeviceControlInterface> DeviceInterface;
+typedef std::map<uint8_t, types::bases::fan::FanMapInfo> FanMap;
 
 } // namespace alias
 } // namespace types
