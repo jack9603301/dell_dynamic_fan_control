@@ -1,0 +1,39 @@
+# 服务器动态风扇控制
+
+该程序通过持续监控和 IPMI 控制来实现温度监测及风扇转速强制覆盖；目前支持以下功能：
+
+[![zread](https://img.shields.io/badge/Ask_Zread-_.svg?style=flat&color=00b0aa&labelColor=000000&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTQuOTYxNTYgMS42MDAxSDIuMjQxNTZDMS44ODgxIDEuNjAwMSAxLjYwMTU2IDEuODg2NjQgMS42MDE1NiAyLjI0MDFWNC45NjAxQzEuNjAxNTYgNS4zMTM1NiAxLjg4ODEgNS42MDAxIDIuMjQxNTYgNS42MDAxSDQuOTYxNTZDNS4zMTUwMiA1LjYwMDEgNS42MDE1NiA1LjMxMzU2IDUuNjAxNTYgNC45NjAxVjIuMjQwMUM1LjYwMTU2IDEuODg2NjQgNS4zMTUwMiAxLjYwMDEgNC45NjE1NiAxLjYwMDFaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik00Ljk2MTU2IDEwLjM5OTlIMi4yNDE1NkMxLjg4ODEgMTAuMzk5OSAxLjYwMTU2IDEwLjY4NjQgMS42MDE1NiAxMS4wMzk5VjEzLjc1OTlDMS42MDE1NiAxNC4xMTM0IDEuODg4MSAxNC4zOTk5IDIuMjQxNTYgMTQuMzk5OUg0Ljk2MTU2QzUuMzE1MDIgMTQuMzk5OSA1LjYwMTU2IDE0LjExMzQgNS42MDE1NiAxMy43NTk5VjExLjAzOTlDNS42MDE1NiAxMC42ODY0IDUuMzE1MDIgMTAuMzk5OSA0Ljk2MTU2IDEwLjM5OTlaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik0xMy43NTg0IDEuNjAwMUgxMS4wMzg0QzEwLjY4NSAxLjYwMDEgMTAuMzk4NCAxLjg4NjY0IDEwLjM5ODQgMi4yNDAxVjQuOTYwMUMxMC4zOTg0IDUuMzEzNTYgMTAuNjg1IDUuNjAwMSAxMS4wMzg0IDUuNjAwMUgxMy43NTg0QzE0LjExMTkgNS42MDAxIDE0LjM5ODQgNS4zMTM1NiAxNC4zOTg0IDQuOTYwMVYyLjI0MDFDMTQuMzk4NCAxLjg4NjY0IDE0LjExMTkgMS42MDAxIDEzLjc1ODQgMS42MDAxWiIgZmlsbD0iI2ZmZiIvPgo8cGF0aCBkPSJNNCAxMkwxMiA0TDQgMTJaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik00IDEyTDEyIDQiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K&logoColor=ffffff)](https://zread.ai/jack9603301/dynamic_fan_control)
+
+- [x] 多曲线控制
+- [x] 风扇设备级高级转速映射
+- [x] 双阈值/迟滞控制（死区控制）
+- [x] 支持死区状态（状态机锁定/迟滞）下的单向上升阶跃输入。
+
+## 支持设备
+
+- Dell（目前仅支持 Dell R720）
+
+## 贡献指南
+
+本项目采用完全符合 C++23 标准的风格，并须遵守以下规范：
+1. 代码风格完全遵循 C++23 标准。
+2. 所有类名均采用 PascalCase（大驼峰）命名法。
+3. 函数内部变量名采用小写字母加下划线分隔的命名方式。
+4. 一个制表符（Tab）或代码缩进相当于 4 个空格。
+5. 遵循树状目录结构，所有设备执行器（actuators）应放置在 `Devices` 目录下，并按服务器品牌名称组织子目录。
+
+## 寻求帮助
+
+这是一个个人业余项目；如有需要，欢迎提交 Issue 或直接联系我。我会尽力尽快回复，但请勿期望能立即得到答复。
+
+由于该软件的初衷仅为处理服务器风扇控制和降噪，我可能无法针对所有使用场景提供支持。
+欢迎分享建议或提交 Pull Request (PR) 以添加您认为有价值的功能。
+
+邮箱：jack9603301@qhjack.top
+
+## 捐赠
+本项目是基于个人需求开发的，但如果您愿意进行个人捐赠，欢迎随时联系我。
+我的邮箱地址是：jack9603301@qhjack.top
+
+请注意，我仅接受法币捐赠；捐赠完成后，资金将作为个人收入处理。
+如果您愿意提供支持，欢迎联系我进行捐赠——哪怕只是请我喝杯咖啡。
