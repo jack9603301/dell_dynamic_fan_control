@@ -316,7 +316,7 @@ types::alias::FanMap Config::LoadFanMapInfo(void) {
             std::string cpu_chip = fan_item["dynamic_cpu_chip"].as<std::string>("");
             std::string speed = fan_item["dynamic_speed_map"].as<std::string>("");
             current_fan.value = types::bases::fan::value_map::DynamicFanMapInfo{cpu_chip, speed};
-            OutputLogsInfo(std::format("Parsed dynamic fan rule: id={}, chip={}, speed={}", 
+            OutputLogsInfo(std::format("Parsed dynamic fan rule: id = {}, chip = {}, speed = {}", 
                 fan_id, cpu_chip, speed));
         }
         else if (fan_item["dynamic_cpu_chip"].IsDefined() && fan_item["advanced_speed_map"].IsDefined()) {
@@ -335,13 +335,21 @@ types::alias::FanMap Config::LoadFanMapInfo(void) {
                 const YAML::Node& adv_entry = YAML::Clone(adv_node[adv_idx]);
                 types::bases::fan::value_map::AdvancedFanMapInfo adv_info;
 
+                uint8_t refer = static_cast<uint8_t>(adv_entry["refer"].as<int>(0));
                 adv_info.speed_map = adv_entry["speed_map"].as<std::string>("default");
-                adv_info.refer = static_cast<uint8_t>(adv_entry["refer"].as<int>(0));
+                adv_info.refer = refer;
 
                 // Read the turn_off_refer switch (optional)
                 if (adv_entry["turn_off_refer"].IsDefined()) {
-                    adv_info.turn_off_refer.type = types::bases::fan::value_map::AdvancedFanMapInfo::OffRefer::ValueType::ON;
-                    adv_info.turn_off_refer.refer = static_cast<uint8_t>(adv_entry["turn_off_refer"].as<int>(0));
+                    uint8_t turn_off_refer = static_cast<uint8_t>(adv_entry["turn_off_refer"].as<int>(0));
+                    if (turn_off_refer <= refer) {
+                        adv_info.turn_off_refer.type = types::bases::fan::value_map::AdvancedFanMapInfo::OffRefer::ValueType::ON;
+                        adv_info.turn_off_refer.refer = static_cast<uint8_t>(adv_entry["turn_off_refer"].as<int>(0));
+                    } else {
+                        OutputLogsWarning(std::format("In the advanced fan speed mapping rule (Rule {}) for Fan {}, the turn_off_refer threshold is higher than refer, triggering an automatic shutdown, turn_off_refer = {}, refer = {}.", adv_idx, fan_id, turn_off_refer, refer));
+                        adv_info.turn_off_refer.type = types::bases::fan::value_map::AdvancedFanMapInfo::OffRefer::ValueType::OFF;
+                        adv_info.turn_off_refer.refer = 0;
+                    }
                 } else {
                     adv_info.turn_off_refer.type = types::bases::fan::value_map::AdvancedFanMapInfo::OffRefer::ValueType::OFF;
                     adv_info.turn_off_refer.refer = 0;
@@ -357,7 +365,7 @@ types::alias::FanMap Config::LoadFanMapInfo(void) {
             OutputLogsInfo(std::format("Parsed advanced fan rule: id={}, entries={}", fan_id, adv_list.size()));
         }
         else {
-            OutputLogsWarning(std::format("Skipping fan rule id={}: no valid type (static/dynamic/advanced)", fan_id));
+            OutputLogsWarning(std::format("Skipping fan rule id = {}: no valid type (static/dynamic/advanced)", fan_id));
             continue;
         }
 

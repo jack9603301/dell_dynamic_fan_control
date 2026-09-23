@@ -30,7 +30,7 @@ void FanController::InsertTemperaturePoint(std::string curve_name, uint8_t tempe
     
     temperature_points.emplace(temperature, speed);
     this->CurveMaps[curve_name] = temperature_points;
-    OutputLogsInfo(std::format("Generate speed mapping curve information, curve_name: {}, Temperature: {}, Speed: {}!", curve_name, temperature, speed));
+    OutputLogsInfo(std::format("Generate speed mapping curve information, curve_name = {}, Temperature = {}, Speed = {}!", curve_name, temperature, speed));
 }
 
 uint8_t FanController::lineInter(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, uint8_t x) {
