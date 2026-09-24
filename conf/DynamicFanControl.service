@@ -1,5 +1,5 @@
 [Unit]
-Description=Dynamic Fan Control
+Description=Server Dynamic Fan Control
 After=network.target
 
 [Service]
