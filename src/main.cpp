@@ -7,10 +7,15 @@
 #include <boost/log/utility/setup/console.hpp>
 #include <boost/program_options.hpp>
 #include <iostream>
+#include <format>
 #include "FanController.hpp"
 #include "Devices/Devices.hpp"
 
 namespace params_option = boost::program_options;
+
+void show_version(void) {
+    std::cout << std::format("{} Version {}.{}", TAG, MAJOR_VERSION, MINOR_VERSION) << std::endl;
+}
 
 int main(int argc, char **argv) {
     // Log system initialization
@@ -32,7 +37,8 @@ int main(int argc, char **argv) {
         "Configuration file path (YAML format, default is config.yaml)")(
         "log-level,l", params_option::value<std::string>()->default_value("info"),
         "Log levels: trace, debug, info, warning, error, fatal")(
-        "verbose,v", "Enable detailed output");
+        "verbose,v", "Enable detailed output")(
+        "version,V", "Show Version");
 
     params_option::variables_map vm;
     try {
@@ -46,6 +52,11 @@ int main(int argc, char **argv) {
 
     if (vm.count("help")) {
         std::cout << desc << std::endl;
+        return 0;
+    }
+
+    if (vm.count("version")) {
+        show_version();
         return 0;
     }
 
