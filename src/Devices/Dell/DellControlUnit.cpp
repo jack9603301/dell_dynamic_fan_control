@@ -23,16 +23,16 @@ bool DellControlUnit::operator()(uint8_t fanid, uint8_t speed) {
     ); 
 
     // Execute the command and return the result.
-    OutputLogsInfo(std::format("[devices:dell] Disabling IPMI automatic fan control command for fan {}...", fanid));
+    OutputLogsInfo(std::format("[devices:dell] Disabling IPMI automatic fan control command for Fan {}...", fanid));
     if (std::system(turn_off_auto_cmd.c_str()) != 0) {
         OutputLogsWarning(std::format("[devices:dell] Failed to send the command to disable IPMI automatic fan control for fan {}, command execution failed!", fanid));
         return false;
     }
 
     // Forced speed override
-    OutputLogsInfo(std::format("[devices:dell] Forcing speed override on fan {}, speed={}...", fanid, speed));
+    OutputLogsInfo(std::format("[devices:dell] Forcing speed override on Fan {}, PWM = {}%...", fanid, speed));
     if (std::system(set_fan_cmd.c_str()) != 0) {
-        OutputLogsWarning(std::format("[devices:dell] Forced speed override on fan {} failed; command execution failed!", fanid));
+        OutputLogsWarning(std::format("[devices:dell] Forced speed override on Fan {} failed; command execution failed!", fanid));
         return false;
     }
     return true;
