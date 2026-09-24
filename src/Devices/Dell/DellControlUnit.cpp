@@ -9,17 +9,17 @@ std::string DellControlUnit::DeviceName(void) {
 }
 
 bool DellControlUnit::operator()(uint8_t fanid, uint8_t speed) {
-    std::string fanid_hex = std::format("{:02x}", fanid);
-    std::string speed_hex = std::format("{:02x}", speed);
+    std::string fanid_hex = std::format("0x{:02x}", fanid);
+    std::string speed_hex = std::format("0x{:02x}", speed);
 
     // Constructing ipmitool commands
     // Disable BMC automatic fan control.
     std::string turn_off_auto_cmd = std::format(
-    "ipmitool raw 0x30 0x30 0x01 0x00 > /dev/null 2>&1"
+        "ipmitool raw 0x30 0x30 0x01 0x00 > /dev/null 2>&1"
     );
     // Set target fan PWM
     std::string set_fan_cmd = std::format(
-    "ipmitool raw 0x30 0x30 0x02 {} {} > /dev/null 2>&1", fanid_hex, speed_hex
+        "ipmitool raw 0x30 0x30 0x02 {} {} > /dev/null 2>&1", fanid_hex, speed_hex
     ); 
 
     // Execute the command and return the result.
