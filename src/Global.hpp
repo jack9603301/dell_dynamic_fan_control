@@ -3,7 +3,7 @@
 
 #define PROJECT_NAME            "DynamicFanControl"
 #define MAJOR_VERSION           2
-#define MINOR_VERSION           2
+#define MINOR_VERSION           3
 
 #ifdef USE_CMAKE_GENERATED
     #include "version_generated.hpp"
