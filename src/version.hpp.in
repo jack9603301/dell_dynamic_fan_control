@@ -1,0 +1,8 @@
+#ifndef __VERSION_GENERATED_HPP
+#define __VERSION_GENERATED_HPP
+
+#if USE_GIT_INFO
+#define GIT_HASH       "@GIT_SHORT_HASH@"
+#endif
+
+#endif 

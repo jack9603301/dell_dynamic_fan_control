@@ -14,7 +14,11 @@
 namespace params_option = boost::program_options;
 
 void show_version(void) {
-    std::cout << std::format("{} Version {}.{}", TAG, MAJOR_VERSION, MINOR_VERSION) << std::endl;
+#if USE_GIT_INFO
+    std::cout << std::format("{} Version v{}.{}-{}", TAG, MAJOR_VERSION, MINOR_VERSION, GIT_HASH) << std::endl;
+#else
+    std::cout << std::format("{} Version v{}.{}", TAG, MAJOR_VERSION, MINOR_VERSION) << std::endl;
+#endif // #if USE_GIT_INFO
 }
 
 int main(int argc, char **argv) {
