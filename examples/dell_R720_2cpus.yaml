@@ -2,31 +2,31 @@ temperature_points:
   - name: "Silent"
     map:
       - temperature: 30
-        fan_speed: 10
+        speed: 10
       - temperature: 45
-        fan_speed: 20
+        speed: 20
       - temperature: 60
-        fan_speed: 40
+        speed: 40
       - temperature: 70
-        fan_speed: 55
+        speed: 55
       - temperature: 80
-        fan_speed: 70
+        speed: 70
       - temperature: 90
-        fan_speed: 90
+        speed: 90
   - name: "High-cooling"
     map:
       - temperature: 30
-        fan_speed: 20
+        speed: 20
       - temperature: 45
-        fan_speed: 40
+        speed: 40
       - temperature: 60
-        fan_speed: 70
+        speed: 70
       - temperature: 70
-        fan_speed: 80
+        speed: 80
       - temperature: 80
-        fan_speed: 90
+        speed: 90
       - temperature: 90
-        fan_speed: 100
+        speed: 100
 setting:
   fan_num: 6
   interval: 1
