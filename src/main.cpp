@@ -10,8 +10,25 @@
 #include <format>
 #include "FanController.hpp"
 #include "Devices/Devices.hpp"
+#include <stop_token>
+
+#if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
+#include <csignal>
+#endif
 
 namespace params_option = boost::program_options;
+
+std::stop_source stop_source;
+
+// Program exit signal handler
+#if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
+void SignalHandler(int signum) {
+    if (signum == SIGTERM || signum == SIGINT) {
+        BOOST_LOG_TRIVIAL(info) << std::format("Received signal {}, initiating graceful shutdown...", signum);
+        stop_source.request_stop();
+    }
+}
+#endif
 
 void show_version(void) {
 #if USE_GIT_INFO
@@ -61,6 +78,12 @@ int main(int argc, char **argv) {
         show_version();
         return 0;
     }
+
+    // Graceful shutdown
+#if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
+    std::signal(SIGTERM, SignalHandler);
+    std::signal(SIGINT, SignalHandler);
+#endif
 
     std::string config_path = vm["config"].as<std::string>();
     auto *config = Config::GetInstance();

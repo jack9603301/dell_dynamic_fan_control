@@ -2,12 +2,16 @@
 #include "Global.hpp"
 #include "FanController.hpp"
 #include <boost/log/trivial.hpp>
+#include <chrono>
 #include <format>
 #include "Config.hpp"
 #include "Types.hpp"
 #include <boost/assert.hpp>
 #include <sensors/sensors.h>
 #include <thread>
+#include <stop_token>
+
+extern std::stop_source stop_source;
 
 void FanController::OutputLogsInfo(std::string str) {
     BOOST_LOG_TRIVIAL(info) << str;
@@ -101,7 +105,7 @@ bool FanController::MonitorTemperature(void) {
     const auto fan_map_result = config->LoadFanMapInfo();
     const auto curve_map = config->LoadTemperatureCurve();
 
-    std::thread monitor_thread([this, &fan_num, &interval, &fan_map_result, &curve_map]() {
+    std::jthread monitor_thread([this, &fan_num, &interval, &fan_map_result, &curve_map](std::stop_token stoken) {
         auto changed_fan_speed = [this](uint8_t fanid, uint8_t pwm) {
             DeviceControl *device_control = DeviceControl::GetInstance();
 
@@ -117,7 +121,13 @@ bool FanController::MonitorTemperature(void) {
         OutputLogsDebug("Temperature monitor thread started");
         
         std::map<uint8_t, types::bases::fan::value_map::AdvancedFanMapInfo> advanced_speed_cache;
-        while(true) {
+
+        // Device Initialization
+        DeviceControl *device_control = DeviceControl::GetInstance();
+        std::string device = this->config->GetString("setting.device");
+        device_control->Initialization(device);
+
+        while(!stoken.stop_requested()) {
             std::unordered_map<std::string, uint8_t> chip_temp_map;
             int chip_idx = 0;
             const ::sensors_chip_name* chip = nullptr;
@@ -276,13 +286,27 @@ bool FanController::MonitorTemperature(void) {
                     OutputLogsDebug(std::format("Fan {}: Set PWM to {}%", fan_id, target_pwm));
                 } 
             }
+
+            auto wait_end = std::chrono::steady_clock::now() + std::chrono::seconds(interval);
+            while (std::chrono::steady_clock::now() < wait_end) {
+                if (stoken.stop_requested()) { 
+                    break;
+                }
+                std::this_thread::sleep_for(std::chrono::milliseconds(STOP_TOKEN_WAITFOR_MSTIMEOUT));
+            }
+
             std::this_thread::sleep_for(std::chrono::seconds(interval));
         }
-    });
+    }, stop_source.get_token());
 
     // Thread startup
     if (monitor_thread.joinable()) {
         monitor_thread.join();
+
+        // Device Destory
+        DeviceControl *device_control = DeviceControl::GetInstance();
+        std::string device = this->config->GetString("setting.device");
+        device_control->Destroy(device);
     } else {
         OutputLogsFatal("Failed to create temperature monitor thread");
         sensors_cleanup();

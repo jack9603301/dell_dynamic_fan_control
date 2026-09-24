@@ -71,3 +71,18 @@ bool DeviceControl::operator()(std::string device_name, uint8_t fanid, uint8_t s
     }
     return false;
 }
+
+void DeviceControl::Initialization(std::string device_name) {
+    if (!this->RegisterMaps.empty() && this->RegisterMaps.find(device_name) != this->RegisterMaps.end()) {
+        BOOST_ASSERT_MSG(device_name == this->RegisterMaps[device_name]->DeviceName(), "The equipment type and the factory-class interface registration type must be identical!");
+        this->RegisterMaps[device_name]->Initialization();
+    }
+}
+
+bool DeviceControl::Destroy(std::string device_name) {
+    if (!this->RegisterMaps.empty() && this->RegisterMaps.find(device_name) != this->RegisterMaps.end()) {
+        BOOST_ASSERT_MSG(device_name == this->RegisterMaps[device_name]->DeviceName(), "The equipment type and the factory-class interface registration type must be identical!");
+        return this->RegisterMaps[device_name]->Destroy();
+    }
+    return false;
+}

@@ -14,6 +14,8 @@ public:
     DeviceControlInterface &operator=(const DeviceControlInterface &obj) = delete;
 public:
     virtual std::string DeviceName(void) = 0;
+    virtual void Initialization(void) = 0;
+    virtual bool Destroy(void) = 0;
     virtual bool operator()(uint8_t fanid, uint8_t speed) = 0;
 public:
     static void OutputLogsInfo(std::string str);
@@ -37,6 +39,8 @@ public:
     static DeviceControl *GetInstance(void);
     bool Register(DeviceControlInterface *interface);
     bool UnRegister(std::string device_name);
+    void Initialization(std::string device_name);
+    bool Destroy(std::string device_name);
     bool operator()(std::string device_name, uint8_t fanid, uint8_t speed);
 private:
     static DeviceControl *instance;
