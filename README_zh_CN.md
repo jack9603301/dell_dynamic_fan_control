@@ -29,6 +29,8 @@
 ```
 git clone https://github.com/jack9603301/DynamicFanControl
 # 或 git clone git@github.com:jack9603301/DynamicFanControl.git
+git checkout release-v{major}.{minor}
+# or git checkout main
 mkdir build
 cd build
 cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release ..
@@ -43,6 +45,8 @@ sudo make install
 ```
 git clone https://github.com/jack9603301/DynamicFanControl
 # 或 git clone git@github.com:jack9603301/DynamicFanControl.git
+git checkout release-v{major}.{minor}
+# or git checkout main
 mkdir build
 cd build
 cmake -DCMAKE_INSTALL_PREFIX=$PWD/dist/ -DCMAKE_BUILD_TYPE=Debug -DENABLE_CLANGD=ON ..
