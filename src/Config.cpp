@@ -235,7 +235,7 @@ types::alias::CurveMap Config::LoadTemperatureCurve(void) {
         // Extract curve name
         const std::string curve_name = curve_entry["name"].as<std::string>("");
         if (curve_name.empty()) {
-            OutputLogsWarning("Skipping curve with empty name at index " + std::to_string(idx));
+            OutputLogsWarning("Skipping Curve with empty name at Index " + std::to_string(idx));
             continue;
         }
 
@@ -251,13 +251,13 @@ types::alias::CurveMap Config::LoadTemperatureCurve(void) {
         for (std::size_t pair_idx = 0; pair_idx < curve_map_node.size(); ++pair_idx) {
             const YAML::Node pair_node = curve_map_node[pair_idx];
             const int temp = pair_node["temperature"].as<int>();
-            const int speed = pair_node["fan_speed"].as<int>();
+            const int speed = pair_node["speed"].as<int>();
 
             if (temp >=0 && temp <=255 && speed >=0 && speed <=255) {
                 current_curve.emplace(static_cast<uint8_t>(temp), static_cast<uint8_t>(speed));
             } else {
                 OutputLogsWarning(
-                    std::format("Ignoring invalid pair in curve '{}' (index {}): temp={}, speed={}",
+                    std::format("Ignoring invalid pair in Curve '{}' (Index {}): Temperature={}, PWM={}",
                                 curve_name, pair_idx, temp, speed)
                 );
             }
@@ -266,7 +266,7 @@ types::alias::CurveMap Config::LoadTemperatureCurve(void) {
         // Store the valid curve in the return result.
         if (!current_curve.empty()) {
             curve_result[curve_name] = current_curve;
-            OutputLogsInfo(std::format("Loaded temperature curve '{}' with {} pairs", curve_name, current_curve.size()));
+            OutputLogsInfo(std::format("Loaded temperature Curve '{}' with {} Pairs", curve_name, current_curve.size()));
         } else {
             OutputLogsWarning("Curve '" + curve_name + "' has no valid temperature-speed pairs");
         }
@@ -276,7 +276,7 @@ types::alias::CurveMap Config::LoadTemperatureCurve(void) {
     if (curve_result.empty()) {
         OutputLogsWarning("No valid temperature curves loaded from config");
     } else {
-        OutputLogsInfo(std::format("Successfully loaded {} temperature curves total", curve_result.size()));
+        OutputLogsInfo(std::format("Successfully loaded {} Temperature Curves total", curve_result.size()));
     }
 
     return curve_result;
@@ -308,7 +308,7 @@ types::alias::FanMap Config::LoadFanMapInfo(void) {
             current_fan.type = types::bases::fan::FanMapInfo::MapType::STATIC;
             uint8_t static_speed = static_cast<uint8_t>(fan_item["static_speed_map"].as<int>(0));
             current_fan.value = types::bases::fan::value_map::StaticFanMapInfo{static_speed};
-            OutputLogsInfo(std::format("Parsed static fan rule: id={}, speed={}", fan_id, static_speed));
+            OutputLogsInfo(std::format("Parsed static fan rule: Id = {}, PWM = {}%", fan_id, static_speed));
         }
         else if (fan_item["dynamic_cpu_chip"].IsDefined() && fan_item["dynamic_speed_map"].IsDefined()) {
             // Advanced Mapping
@@ -316,7 +316,7 @@ types::alias::FanMap Config::LoadFanMapInfo(void) {
             std::string cpu_chip = fan_item["dynamic_cpu_chip"].as<std::string>("");
             std::string speed = fan_item["dynamic_speed_map"].as<std::string>("");
             current_fan.value = types::bases::fan::value_map::DynamicFanMapInfo{cpu_chip, speed};
-            OutputLogsInfo(std::format("Parsed dynamic fan rule: id = {}, chip = {}, speed = {}", 
+            OutputLogsInfo(std::format("Parsed dynamic fan rule: Id = {}, Chip = {}, PWM = {}%", 
                 fan_id, cpu_chip, speed));
         }
         else if (fan_item["dynamic_cpu_chip"].IsDefined() && fan_item["advanced_speed_map"].IsDefined()) {
@@ -325,7 +325,7 @@ types::alias::FanMap Config::LoadFanMapInfo(void) {
             const YAML::Node& adv_node = YAML::Clone(fan_item["advanced_speed_map"]);
 
             if (!adv_node.IsSequence()) {
-                OutputLogsWarning(std::format("Skipping advanced fan item id={}: advanced_speed_map is not a sequence", fan_id));
+                OutputLogsWarning(std::format("Skipping advanced fan item Id = {}: advanced_speed_map is not a sequence", fan_id));
                 continue;
             }
             
@@ -346,7 +346,7 @@ types::alias::FanMap Config::LoadFanMapInfo(void) {
                         adv_info.turn_off_refer.type = types::bases::fan::value_map::AdvancedFanMapInfo::OffRefer::ValueType::ON;
                         adv_info.turn_off_refer.refer = static_cast<uint8_t>(adv_entry["turn_off_refer"].as<int>(0));
                     } else {
-                        OutputLogsWarning(std::format("In the advanced fan speed mapping rule (Rule {}) for Fan {}, the turn_off_refer threshold is higher than refer, triggering an automatic shutdown, turn_off_refer = {}, refer = {}.", adv_idx, fan_id, turn_off_refer, refer));
+                        OutputLogsWarning(std::format("In the advanced fan speed mapping rule (Rule {}) for Fan {}, the turn_off_refer threshold is higher than refer, triggering an automatic shutdown, Turn Off Refer = {}°C, Refer = {}°C.", adv_idx, fan_id, turn_off_refer, refer));
                         adv_info.turn_off_refer.type = types::bases::fan::value_map::AdvancedFanMapInfo::OffRefer::ValueType::OFF;
                         adv_info.turn_off_refer.refer = 0;
                     }
@@ -362,10 +362,10 @@ types::alias::FanMap Config::LoadFanMapInfo(void) {
             adv_meta.cpu_chip = cpu_chip;
             adv_meta.speed_maps = adv_list;
             current_fan.value = adv_meta;
-            OutputLogsInfo(std::format("Parsed advanced fan rule: id={}, entries={}", fan_id, adv_list.size()));
+            OutputLogsInfo(std::format("Parsed advanced fan rule: Id = {}, Entries = {}", fan_id, adv_list.size()));
         }
         else {
-            OutputLogsWarning(std::format("Skipping fan rule id = {}: no valid type (static/dynamic/advanced)", fan_id));
+            OutputLogsWarning(std::format("Skipping fan rule Id = {}: no valid type (static/dynamic/advanced)", fan_id));
             continue;
         }
 

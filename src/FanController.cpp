@@ -30,7 +30,7 @@ void FanController::InsertTemperaturePoint(std::string curve_name, uint8_t tempe
     
     temperature_points.emplace(temperature, speed);
     this->CurveMaps[curve_name] = temperature_points;
-    OutputLogsInfo(std::format("Generate speed mapping curve information, curve_name = {}, Temperature = {}, Speed = {}!", curve_name, temperature, speed));
+    OutputLogsInfo(std::format("Generate speed mapping curve information, Curve = {}, Temperature = {}°C, PWM = {}%!", curve_name, temperature, speed));
 }
 
 uint8_t FanController::lineInter(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, uint8_t x) {
@@ -103,9 +103,9 @@ bool FanController::MonitorTemperature(void) {
 
             std::string device = this->config->GetString("setting.device");
             if (device.empty()) {
-                OutputLogsWarning(std::format("Due to a lack of target device type, it is impossible to send a forced override command to control the speed of fan {}, Speed = {}", fanid, pwm));
+                OutputLogsWarning(std::format("Due to a lack of target device type, it is impossible to send a forced override command to control the speed of Fan {}, PWM = {}%", fanid, pwm));
             } else {
-                OutputLogsInfo(std::format("Send a command to the Fan Control Unit of Device {} to force the speed of Fan {} to {}.", device, fanid, pwm));
+                OutputLogsInfo(std::format("Send a command to the Fan Control Unit of Device {} to force the speed of Fan {} to {}%.", device, fanid, pwm));
                 (*device_control)(device, fanid, pwm);
             }
         };
@@ -151,7 +151,7 @@ bool FanController::MonitorTemperature(void) {
 
                 if (chip_max_temp > 0) {
                     chip_temp_map[chip_name] = chip_max_temp;
-                    OutputLogsInfo(std::format("Detected CPU chip: {}, max temp: {}°C", chip_name, chip_max_temp));
+                    OutputLogsInfo(std::format("Detected CPU Chip: {}, Max Temperature: {}°C", chip_name, chip_max_temp));
                 }
             }
             
@@ -166,7 +166,7 @@ bool FanController::MonitorTemperature(void) {
                     case types::bases::fan::FanMapInfo::MapType::STATIC: {
                             const auto& static_val = std::get<types::bases::fan::value_map::StaticFanMapInfo>(fan_info.value);
                             target_pwm = static_val.speed_map;
-                            OutputLogsInfo(std::format("Fan {}: Static mapping, speed = {}", fan_id, target_pwm));
+                            OutputLogsInfo(std::format("Fan {}: Static mapping, PWM = {}%", fan_id, target_pwm));
                             break;
                         }
                     case types::bases::fan::FanMapInfo::MapType::DYNAMIC: {
@@ -178,10 +178,10 @@ bool FanController::MonitorTemperature(void) {
                             if (chip_temp_map.count(target_chip)) {
                                 uint8_t chip_temp = chip_temp_map[target_chip];
                                 target_pwm = this->GetSpeedPWM(speed_map_name, chip_temp);
-                                OutputLogsInfo(std::format("Fan {}: Dynamic mapping, chip = {}, curve = {}, PWM = {}", 
+                                OutputLogsInfo(std::format("Fan {}: Dynamic mapping, Chip = {}, Curve = {}, PWM = {}%", 
                                     fan_id, target_chip, speed_map_name, target_pwm));
                             } else {
-                                OutputLogsWarning(std::format("Fan {}: Dynamic chip {} not found, fallback to default curve", fan_id, target_chip));
+                                OutputLogsWarning(std::format("Fan {}: Dynamic Chip {} not found, fallback to default Curve", fan_id, target_chip));
                             }
                             break;
                         }
@@ -224,10 +224,10 @@ bool FanController::MonitorTemperature(void) {
                                     this->fanmap_advanced_rules.emplace(fan_id, advanced_speed_cache[fan_id]);
                                     target_pwm = this->GetSpeedPWM(selected_curve, current_temp);
                                     if (!allow_descent && descent_lock != nullptr) {
-                                        OutputLogsInfo(std::format("Fan {}: Advanced mapping configuration locked, Reference = {}, Curve = {}, PWM = {}",
+                                        OutputLogsInfo(std::format("Fan {}: Advanced mapping configuration locked, Refer = {}°C, Curve = {}, PWM = {}%",
                                             fan_id, max_refer, selected_curve, target_pwm));
                                     } else {
-                                        OutputLogsInfo(std::format("Fan {}: Advanced mapping, refer = {}, curve = {}, PWM = {}", 
+                                        OutputLogsInfo(std::format("Fan {}: Advanced mapping, Refer = {}°C, Curve = {}, PWM = {}%", 
                                             fan_id, max_refer, selected_curve, target_pwm));
                                     }
                                 }
@@ -254,7 +254,7 @@ bool FanController::MonitorTemperature(void) {
                             }
 
                             if (dynamic_match) {
-                                temperature_policy(false, nullptr);
+                                temperature_policy(true, nullptr);
                             }
                             break;
                         }
@@ -263,7 +263,7 @@ bool FanController::MonitorTemperature(void) {
                     }
 
                     changed_fan_speed(fan_id, target_pwm);
-                    OutputLogsInfo(std::format("Fan {}: Set PWM to {}", fan_id, target_pwm));
+                    OutputLogsInfo(std::format("Fan {}: Set PWM to {}%", fan_id, target_pwm));
                 } 
             }
             std::this_thread::sleep_for(std::chrono::seconds(interval));
