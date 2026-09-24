@@ -1,7 +1,7 @@
 #ifndef GLOBAL_HPP
 #define GLOBAL_HPP
 
-#define TAG                     "DynamicFanControl"
+#define PROJECT_NAME            "DynamicFanControl"
 #define MAJOR_VERSION           2
 #define MINOR_VERSION           2
 

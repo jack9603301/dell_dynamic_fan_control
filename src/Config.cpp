@@ -8,19 +8,19 @@ Config *Config::GetInstance(void) {
     return singleton;
 }
 void Config::OutputLogsInfo(std::string str) {
-    BOOST_LOG_TRIVIAL(info) << "[" << TAG << "] " << str;
+    BOOST_LOG_TRIVIAL(info) << str;
 }
 
 void Config::OutputLogsWarning(std::string str) {
-    BOOST_LOG_TRIVIAL(warning) << "[" << TAG << "] " << str;
+    BOOST_LOG_TRIVIAL(warning) << str;
 }
 
 void Config::OutputLogsFatal(std::string str) {
-    BOOST_LOG_TRIVIAL(fatal) << "[" << TAG << "] " << str;
+    BOOST_LOG_TRIVIAL(fatal) << str;
 }
 
 void Config::OutputLogsDebug(std::string str) {
-    BOOST_LOG_TRIVIAL(debug) << "[" << TAG << "] " << str;
+    BOOST_LOG_TRIVIAL(debug) << str;
 }
 
 bool Config::LoadFromFile(const std::string& filepath) {

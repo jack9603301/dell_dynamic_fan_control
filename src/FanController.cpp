@@ -10,19 +10,19 @@
 #include <thread>
 
 void FanController::OutputLogsInfo(std::string str) {
-    BOOST_LOG_TRIVIAL(info) << "[" << TAG << "] " << str;
+    BOOST_LOG_TRIVIAL(info) << str;
 }
 
 void FanController::OutputLogsWarning(std::string str) {
-    BOOST_LOG_TRIVIAL(warning) << "[" << TAG << "] " << str;
+    BOOST_LOG_TRIVIAL(warning) << str;
 }
 
 void FanController::OutputLogsFatal(std::string str) {
-    BOOST_LOG_TRIVIAL(fatal) << "[" << TAG << "] " << str;
+    BOOST_LOG_TRIVIAL(fatal) << str;
 }
 
 void FanController::OutputLogsDebug(std::string str) {
-    BOOST_LOG_TRIVIAL(debug) << "[" << TAG << "] " << str;
+    BOOST_LOG_TRIVIAL(debug) << str;
 }
 
 void FanController::InsertTemperaturePoint(std::string curve_name, uint8_t temperature, uint8_t speed) {

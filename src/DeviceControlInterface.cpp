@@ -6,37 +6,37 @@
 DeviceControl *DeviceControl::instance = nullptr;
 
 void DeviceControl::OutputLogsInfo(std::string str) {
-    BOOST_LOG_TRIVIAL(info) << "[" << TAG << "] " << str;
+    BOOST_LOG_TRIVIAL(info) << str;
 }
 
 void DeviceControl::OutputLogsWarning(std::string str) {
-    BOOST_LOG_TRIVIAL(warning) << "[" << TAG << "] " << str;
+    BOOST_LOG_TRIVIAL(warning) << str;
 }
 
 
 void DeviceControl::OutputLogsFatal(std::string str) {
-    BOOST_LOG_TRIVIAL(fatal) << "[" << TAG << "] " << str;
+    BOOST_LOG_TRIVIAL(fatal) << str;
 }
 
 void DeviceControl::OutputLogsDebug(std::string str) {
-    BOOST_LOG_TRIVIAL(debug) << "[" << TAG << "] " << str;
+    BOOST_LOG_TRIVIAL(debug) << str;
 }
 
 void DeviceControlInterface::OutputLogsInfo(std::string str) {
-    BOOST_LOG_TRIVIAL(info) << "[" << TAG << "] " << str;
+    BOOST_LOG_TRIVIAL(info) << str;
 }
 
 void DeviceControlInterface::OutputLogsWarning(std::string str) {
-    BOOST_LOG_TRIVIAL(warning) << "[" << TAG << "] " << str;
+    BOOST_LOG_TRIVIAL(warning) << str;
 }
 
 
 void DeviceControlInterface::OutputLogsFatal(std::string str) {
-    BOOST_LOG_TRIVIAL(fatal) << "[" << TAG << "] " << str;
+    BOOST_LOG_TRIVIAL(fatal) << str;
 }
 
 void DeviceControlInterface::OutputLogsDebug(std::string str) {
-    BOOST_LOG_TRIVIAL(debug) << "[" << TAG << "] " << str;
+    BOOST_LOG_TRIVIAL(debug) << str;
 }
 
 

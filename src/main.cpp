@@ -15,9 +15,9 @@ namespace params_option = boost::program_options;
 
 void show_version(void) {
 #if USE_GIT_INFO
-    std::cout << std::format("{} Version v{}.{}-{}", TAG, MAJOR_VERSION, MINOR_VERSION, GIT_HASH) << std::endl;
+    std::cout << std::format("{} Version v{}.{}-{}", PROJECT_NAME, MAJOR_VERSION, MINOR_VERSION, GIT_HASH) << std::endl;
 #else
-    std::cout << std::format("{} Version v{}.{}", TAG, MAJOR_VERSION, MINOR_VERSION) << std::endl;
+    std::cout << std::format("{} Version v{}.{}", PROJECT_NAME, MAJOR_VERSION, MINOR_VERSION) << std::endl;
 #endif // #if USE_GIT_INFO
 }
 
@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
         std::cout,
         boost::log::keywords::format =
             (boost::log::expressions::stream
-            << " [" << boost::log::trivial::severity << "] "
+            << "[" << boost::log::trivial::severity << "] "
             << boost::log::expressions::smessage));
     boost::log::add_common_attributes();
 
@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
                             vm);
         params_option::notify(vm);
     } catch (const params_option::error &e) {
-        BOOST_LOG_TRIVIAL(fatal) << "[" << TAG << "] " << e.what();
+        BOOST_LOG_TRIVIAL(fatal) << e.what();
         return 1;
     }
 
@@ -66,12 +66,10 @@ int main(int argc, char **argv) {
     auto *config = Config::GetInstance();
     if (!config->LoadFromFile(config_path)) {
         BOOST_LOG_TRIVIAL(fatal)
-            << "[" << TAG << "] "
             << "Unable to load configuration file: " << config_path;
         return 1;
     }
-    BOOST_LOG_TRIVIAL(info) << "[" << TAG << "] "
-                            << "Configuration file loaded: " << config_path;
+    BOOST_LOG_TRIVIAL(info) << "Configuration file loaded: " << config_path;
 
     if (vm.count("log-level")) {
         std::string level_str = vm["log-level"].as<std::string>();
@@ -105,9 +103,9 @@ int main(int argc, char **argv) {
         config->SetBool("verbose", true);
     }
 
-    BOOST_LOG_TRIVIAL(debug) << "[" << TAG << "] " << "Log level: "
+    BOOST_LOG_TRIVIAL(debug) << "Log level: "
                           << config->GetString("log.level", "info");
-    BOOST_LOG_TRIVIAL(debug) << "[" << TAG << "] " << "Detailed mode: "
+    BOOST_LOG_TRIVIAL(debug) << "Detailed mode: "
                           << (config->GetBool("verbose", false) ? "Enabled"
                                                                 : "Disabled");
     FanController fan_controller;
