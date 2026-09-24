@@ -22,7 +22,45 @@
 4. 一个制表符（Tab）或代码缩进相当于 4 个空格。
 5. 遵循树状目录结构，所有设备执行器（actuators）应放置在 `Devices` 目录下，并按服务器品牌名称组织子目录。
 
-## 寻求帮助
+## 从源码编译
+
+若要从源码进行安装，请执行以下命令；这将获取源码、进行编译并将其安装到您的系统中。
+
+```
+git clone https://github.com/jack9603301/DynamicFanControl
+# 或 git clone git@github.com:jack9603301/DynamicFanControl.git
+mkdir build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release ..
+make
+sudo make install
+```
+
+对于调试（Debug）版本的安装，我们不建议将其直接安装到系统目录中。调试版本的体积通常大于发布（Release）版本；
+选择调试版本（而非标准的源码安装）意味着该构建专用于调试目的，这也暗示控制系统可能存在不稳定性。
+请执行以下命令；这将获取源码、进行编译并将其安装到您的系统中。
+
+```
+git clone https://github.com/jack9603301/DynamicFanControl
+# 或 git clone git@github.com:jack9603301/DynamicFanControl.git
+mkdir build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=$PWD/dist/ -DCMAKE_BUILD_TYPE=Debug -DENABLE_CLANGD=ON ..
+make
+make install
+```
+
+对于调试版本，我们建议启用 `ENABLE_CLANGD` 选项；这将生成用于 LSP 解析的 `compile_commands.json` 文件，从而帮助您的 IDE（如 Neovim）定位代码符号定义。
+
+编译选项说明如下：
+
+- CMAKE_INSTALL_PREFIX：程序的安装路径。对于源码安装，通常设为 `/usr`。
+- CMAKE_BUILD_TYPE：构建类型，取决于您的 CMake 配置；通常选择以下值之一：
+- Debug
+- Release
+- ENABLE_CLANGD：为 IDE 生成 compile_commands.json 文件
+
+## 获取社区帮助
 
 这是一个个人业余项目；如有需要，欢迎提交 Issue 或直接联系我。我会尽力尽快回复，但请勿期望能立即得到答复。
 
