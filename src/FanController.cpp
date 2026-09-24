@@ -21,6 +21,10 @@ void FanController::OutputLogsFatal(std::string str) {
     BOOST_LOG_TRIVIAL(fatal) << "[" << TAG << "] " << str;
 }
 
+void FanController::OutputLogsDebug(std::string str) {
+    BOOST_LOG_TRIVIAL(debug) << "[" << TAG << "] " << str;
+}
+
 void FanController::InsertTemperaturePoint(std::string curve_name, uint8_t temperature, uint8_t speed) {
     types::alias::TemperatureMap temperature_points;
     // Check for the existence of a temperature profile mapping.
@@ -30,7 +34,7 @@ void FanController::InsertTemperaturePoint(std::string curve_name, uint8_t tempe
     
     temperature_points.emplace(temperature, speed);
     this->CurveMaps[curve_name] = temperature_points;
-    OutputLogsInfo(std::format("Generate speed mapping curve information, Curve = {}, Temperature = {}°C, PWM = {}%!", curve_name, temperature, speed));
+    OutputLogsDebug(std::format("Generate speed mapping curve information, Curve = {}, Temperature = {}°C, PWM = {}%!", curve_name, temperature, speed));
 }
 
 uint8_t FanController::lineInter(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, uint8_t x) {
@@ -105,12 +109,12 @@ bool FanController::MonitorTemperature(void) {
             if (device.empty()) {
                 OutputLogsWarning(std::format("Due to a lack of target device type, it is impossible to send a forced override command to control the speed of Fan {}, PWM = {}%", fanid, pwm));
             } else {
-                OutputLogsInfo(std::format("Send a command to the Fan Control Unit of Device {} to force the speed of Fan {} to {}%.", device, fanid, pwm));
+                OutputLogsDebug(std::format("Send a command to the Fan Control Unit of Device {} to force the speed of Fan {} to {}%.", device, fanid, pwm));
                 (*device_control)(device, fanid, pwm);
             }
         };
 
-        OutputLogsInfo("Temperature monitor thread started");
+        OutputLogsDebug("Temperature monitor thread started");
         
         std::map<uint8_t, types::bases::fan::value_map::AdvancedFanMapInfo> advanced_speed_cache;
         while(true) {
@@ -166,7 +170,7 @@ bool FanController::MonitorTemperature(void) {
                     case types::bases::fan::FanMapInfo::MapType::STATIC: {
                             const auto& static_val = std::get<types::bases::fan::value_map::StaticFanMapInfo>(fan_info.value);
                             target_pwm = static_val.speed_map;
-                            OutputLogsInfo(std::format("Fan {}: Static mapping, PWM = {}%", fan_id, target_pwm));
+                            OutputLogsDebug(std::format("Fan {}: Static mapping, PWM = {}%", fan_id, target_pwm));
                             break;
                         }
                     case types::bases::fan::FanMapInfo::MapType::DYNAMIC: {
@@ -178,7 +182,7 @@ bool FanController::MonitorTemperature(void) {
                             if (chip_temp_map.count(target_chip)) {
                                 uint8_t chip_temp = chip_temp_map[target_chip];
                                 target_pwm = this->GetSpeedPWM(speed_map_name, chip_temp);
-                                OutputLogsInfo(std::format("Fan {}: Dynamic mapping, Chip = {}, Curve = {}, PWM = {}%", 
+                                OutputLogsDebug(std::format("Fan {}: Dynamic mapping, Chip = {}, Curve = {}, PWM = {}%", 
                                     fan_id, target_chip, speed_map_name, target_pwm));
                             } else {
                                 OutputLogsWarning(std::format("Fan {}: Dynamic Chip {} not found, fallback to default Curve", fan_id, target_chip));
@@ -210,13 +214,19 @@ bool FanController::MonitorTemperature(void) {
                                             // Execute state machine descent strategy lock.
                                             if (current_temp <= descent_lock->refer) {
                                                 need_update_advance = false;
+                                                OutputLogsDebug(std::format("Transfer to a lower temperature is not possible because the current temperature is below the activation lock threshold. Current Temperature = {}°C, Locked Refer = {}, Locked Turn Off Refer = {}, Locked Curve = {}", 
+                                                    current_temp,
+                                                    descent_lock->refer, 
+                                                    descent_lock->turn_off_refer.type == types::bases::fan::value_map::AdvancedFanMapInfo::OffRefer::ValueType::ON ?
+                                                        std::format("{}",descent_lock->turn_off_refer.refer) : std::string("<OFF>"),
+                                                    descent_lock->speed_map));
                                                 continue;
                                             }
                                         }
                                         max_refer = adv.refer;
                                         selected_curve = adv.speed_map;
                                         advanced_speed_cache[fan_id] = adv;
-                                            need_update_advance = true;
+                                        need_update_advance = true;
                                     }
                                 }
 
@@ -241,12 +251,12 @@ bool FanController::MonitorTemperature(void) {
                                 if (system_adv_rule.turn_off_refer.type == types::bases::fan::value_map::AdvancedFanMapInfo::OffRefer::ValueType::ON && 
                                         current_temp <= system_adv_rule.turn_off_refer.refer) {
                                     this->fanmap_advanced_rules.erase(fan_id);   // Exit conditions met; clearing configuration lock.
-                                    OutputLogsInfo(std::format("Fan {} meets the shutdown/exit conditions for Rule {}, the configuration lock for the advanced mapping rule is cleared.", fan_id, system_adv_rule.speed_map));
+                                    OutputLogsDebug(std::format("Fan {} meets the shutdown/exit conditions for Rule {}, the configuration lock for the advanced mapping rule is cleared.", fan_id, system_adv_rule.speed_map));
                                     dynamic_match = true;
                                 } else if(system_adv_rule.turn_off_refer.type == types::bases::fan::value_map::AdvancedFanMapInfo::OffRefer::ValueType::OFF &&
                                         current_temp <= system_adv_rule.refer) {
                                     this->fanmap_advanced_rules.erase(fan_id);   // Exit conditions met; clearing configuration lock.
-                                    OutputLogsInfo(std::format("Fan {} meets the shutdown/exit conditions for Rule {}, the configuration lock for the advanced mapping rule is cleared.", fan_id, system_adv_rule.speed_map));
+                                    OutputLogsDebug(std::format("Fan {} meets the shutdown/exit conditions for Rule {}, the configuration lock for the advanced mapping rule is cleared.", fan_id, system_adv_rule.speed_map));
                                 } else {
                                     temperature_policy(false, &system_adv_rule);
                                     dynamic_match = false;
@@ -263,7 +273,7 @@ bool FanController::MonitorTemperature(void) {
                     }
 
                     changed_fan_speed(fan_id, target_pwm);
-                    OutputLogsInfo(std::format("Fan {}: Set PWM to {}%", fan_id, target_pwm));
+                    OutputLogsDebug(std::format("Fan {}: Set PWM to {}%", fan_id, target_pwm));
                 } 
             }
             std::this_thread::sleep_for(std::chrono::seconds(interval));
@@ -280,7 +290,7 @@ bool FanController::MonitorTemperature(void) {
     }
 
     sensors_cleanup();
-    OutputLogsInfo("Temperature monitor task completed");
+    OutputLogsDebug("Temperature monitor task completed");
 
     return true;
 }

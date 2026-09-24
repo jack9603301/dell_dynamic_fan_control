@@ -3,16 +3,8 @@
 #include <boost/log/trivial.hpp>
 #include "Config.hpp"
 
-Config::Config(void) {
-    OutputLogsInfo("Config singleton initialized.");
-}
-Config::~Config() {
-    OutputLogsInfo("Config singleton uninitialized.");
-}
-
 Config *Config::GetInstance(void) {
     static Config *singleton = new Config;
-    OutputLogsInfo("Get the instance address of the configuration module");
     return singleton;
 }
 void Config::OutputLogsInfo(std::string str) {
@@ -20,12 +12,15 @@ void Config::OutputLogsInfo(std::string str) {
 }
 
 void Config::OutputLogsWarning(std::string str) {
-    BOOST_LOG_TRIVIAL(fatal) << "[" << TAG << "] " << str;
+    BOOST_LOG_TRIVIAL(warning) << "[" << TAG << "] " << str;
 }
-
 
 void Config::OutputLogsFatal(std::string str) {
     BOOST_LOG_TRIVIAL(fatal) << "[" << TAG << "] " << str;
+}
+
+void Config::OutputLogsDebug(std::string str) {
+    BOOST_LOG_TRIVIAL(debug) << "[" << TAG << "] " << str;
 }
 
 bool Config::LoadFromFile(const std::string& filepath) {
@@ -266,7 +261,7 @@ types::alias::CurveMap Config::LoadTemperatureCurve(void) {
         // Store the valid curve in the return result.
         if (!current_curve.empty()) {
             curve_result[curve_name] = current_curve;
-            OutputLogsInfo(std::format("Loaded temperature Curve '{}' with {} Pairs", curve_name, current_curve.size()));
+            OutputLogsDebug(std::format("Loaded temperature Curve '{}' with {} Pairs", curve_name, current_curve.size()));
         } else {
             OutputLogsWarning("Curve '" + curve_name + "' has no valid temperature-speed pairs");
         }
@@ -308,7 +303,7 @@ types::alias::FanMap Config::LoadFanMapInfo(void) {
             current_fan.type = types::bases::fan::FanMapInfo::MapType::STATIC;
             uint8_t static_speed = static_cast<uint8_t>(fan_item["static_speed_map"].as<int>(0));
             current_fan.value = types::bases::fan::value_map::StaticFanMapInfo{static_speed};
-            OutputLogsInfo(std::format("Parsed static fan rule: Id = {}, PWM = {}%", fan_id, static_speed));
+            OutputLogsDebug(std::format("Parsed static fan rule: Id = {}, PWM = {}%", fan_id, static_speed));
         }
         else if (fan_item["dynamic_cpu_chip"].IsDefined() && fan_item["dynamic_speed_map"].IsDefined()) {
             // Advanced Mapping
@@ -316,7 +311,7 @@ types::alias::FanMap Config::LoadFanMapInfo(void) {
             std::string cpu_chip = fan_item["dynamic_cpu_chip"].as<std::string>("");
             std::string speed = fan_item["dynamic_speed_map"].as<std::string>("");
             current_fan.value = types::bases::fan::value_map::DynamicFanMapInfo{cpu_chip, speed};
-            OutputLogsInfo(std::format("Parsed dynamic fan rule: Id = {}, Chip = {}, PWM = {}%", 
+            OutputLogsDebug(std::format("Parsed dynamic fan rule: Id = {}, Chip = {}, PWM = {}%", 
                 fan_id, cpu_chip, speed));
         }
         else if (fan_item["dynamic_cpu_chip"].IsDefined() && fan_item["advanced_speed_map"].IsDefined()) {
@@ -362,7 +357,7 @@ types::alias::FanMap Config::LoadFanMapInfo(void) {
             adv_meta.cpu_chip = cpu_chip;
             adv_meta.speed_maps = adv_list;
             current_fan.value = adv_meta;
-            OutputLogsInfo(std::format("Parsed advanced fan rule: Id = {}, Entries = {}", fan_id, adv_list.size()));
+            OutputLogsDebug(std::format("Parsed advanced fan rule: Id = {}, Entries = {}", fan_id, adv_list.size()));
         }
         else {
             OutputLogsWarning(std::format("Skipping fan rule Id = {}: no valid type (static/dynamic/advanced)", fan_id));

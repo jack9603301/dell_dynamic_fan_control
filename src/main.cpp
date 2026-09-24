@@ -27,8 +27,6 @@ int main(int argc, char **argv) {
         std::cout,
         boost::log::keywords::format =
             (boost::log::expressions::stream
-            << boost::log::expressions::format_date_time<
-                boost::posix_time::ptime>("TimeStamp", "%Y-%m-%d %H:%M:%S")
             << " [" << boost::log::trivial::severity << "] "
             << boost::log::expressions::smessage));
     boost::log::add_common_attributes();
@@ -93,7 +91,7 @@ int main(int argc, char **argv) {
         } else if (level_str == "fatal") {
             level = boost::log::trivial::fatal;
         } else {
-            BOOST_LOG_TRIVIAL(info)
+            BOOST_LOG_TRIVIAL(warning)
                 << "Unknown log level: " << level_str << ", Use the default info";
                 level = boost::log::trivial::info;
         }
@@ -107,9 +105,9 @@ int main(int argc, char **argv) {
         config->SetBool("verbose", true);
     }
 
-    BOOST_LOG_TRIVIAL(info) << "[" << TAG << "] " << "Log level: "
+    BOOST_LOG_TRIVIAL(debug) << "[" << TAG << "] " << "Log level: "
                           << config->GetString("log.level", "info");
-    BOOST_LOG_TRIVIAL(info) << "[" << TAG << "] " << "Detailed mode: "
+    BOOST_LOG_TRIVIAL(debug) << "[" << TAG << "] " << "Detailed mode: "
                           << (config->GetBool("verbose", false) ? "Enabled"
                                                                 : "Disabled");
     FanController fan_controller;

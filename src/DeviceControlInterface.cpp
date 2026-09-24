@@ -10,7 +10,7 @@ void DeviceControl::OutputLogsInfo(std::string str) {
 }
 
 void DeviceControl::OutputLogsWarning(std::string str) {
-    BOOST_LOG_TRIVIAL(fatal) << "[" << TAG << "] " << str;
+    BOOST_LOG_TRIVIAL(warning) << "[" << TAG << "] " << str;
 }
 
 
@@ -18,12 +18,16 @@ void DeviceControl::OutputLogsFatal(std::string str) {
     BOOST_LOG_TRIVIAL(fatal) << "[" << TAG << "] " << str;
 }
 
+void DeviceControl::OutputLogsDebug(std::string str) {
+    BOOST_LOG_TRIVIAL(debug) << "[" << TAG << "] " << str;
+}
+
 void DeviceControlInterface::OutputLogsInfo(std::string str) {
     BOOST_LOG_TRIVIAL(info) << "[" << TAG << "] " << str;
 }
 
 void DeviceControlInterface::OutputLogsWarning(std::string str) {
-    BOOST_LOG_TRIVIAL(fatal) << "[" << TAG << "] " << str;
+    BOOST_LOG_TRIVIAL(warning) << "[" << TAG << "] " << str;
 }
 
 
@@ -31,12 +35,16 @@ void DeviceControlInterface::OutputLogsFatal(std::string str) {
     BOOST_LOG_TRIVIAL(fatal) << "[" << TAG << "] " << str;
 }
 
+void DeviceControlInterface::OutputLogsDebug(std::string str) {
+    BOOST_LOG_TRIVIAL(debug) << "[" << TAG << "] " << str;
+}
+
+
 DeviceControl *DeviceControl::GetInstance(void) {
     if (instance == nullptr) {
         instance = new DeviceControl;
     }
 
-    OutputLogsInfo("Get the instance address of the Device Control module");
     return instance;
 }
 

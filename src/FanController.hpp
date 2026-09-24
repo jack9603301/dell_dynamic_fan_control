@@ -22,6 +22,7 @@ private:
     static void OutputLogsInfo(std::string str);
     static void OutputLogsWarning(std::string str);
     static void OutputLogsFatal(std::string str);
+    static void OutputLogsDebug(std::string str);
 
 public:
     std::map<std::string, types::alias::TemperatureMap> CurveMaps;

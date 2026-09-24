@@ -19,6 +19,7 @@ public:
     static void OutputLogsInfo(std::string str);
     static void OutputLogsWarning(std::string str);
     static void OutputLogsFatal(std::string str);
+    static void OutputLogsDebug(std::string str);
 };
 
 class DeviceControl { 
@@ -31,6 +32,7 @@ public:
     static void OutputLogsInfo(std::string str);
     static void OutputLogsWarning(std::string str);
     static void OutputLogsFatal(std::string str);
+    static void OutputLogsDebug(std::string str);
 
     static DeviceControl *GetInstance(void);
     bool Register(DeviceControlInterface *interface);

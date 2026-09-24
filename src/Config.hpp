@@ -25,8 +25,8 @@ public:
     std::map<uint8_t, types::bases::fan::FanMapInfo> LoadFanMapInfo(void);
 
 private:
-    Config(void);
-    ~Config();
+    Config(void) = default;
+    ~Config() = default;
 
     void FlattenNode(const YAML::Node& node, const std::string& prefix, std::unordered_map<std::string, std::string>& flat_map);
     YAML::Node GetNode(const std::string& key) const;
@@ -34,6 +34,7 @@ private:
     static void OutputLogsInfo(std::string str);
     static void OutputLogsWarning(std::string str);
     static void OutputLogsFatal(std::string str);
+    static void OutputLogsDebug(std::string str);
 
     YAML::Node root_node;
     std::unordered_map<std::string, std::string> flat_config;
