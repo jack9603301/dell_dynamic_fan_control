@@ -3,7 +3,7 @@
 
 #define TAG                     "DynamicFanControl"
 #define MAJOR_VERSION           2
-#define MINOR_VERSION           1
+#define MINOR_VERSION           2
 
 #ifdef USE_CMAKE_GENERATED
     #include "version_generated.hpp"
