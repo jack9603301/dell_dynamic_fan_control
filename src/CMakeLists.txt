@@ -23,6 +23,9 @@ target_link_libraries(dynamic_fan_control PRIVATE
     ${SENSORS_LIBRARY}
 )
 
+# Output version number
+message(STATUS "Version: ${PROJECT_VERSION}")
+
 find_package(Git QUIET)
 if (GIT_FOUND AND EXISTS "${CMAKE_SOURCE_DIR}/.git")
     execute_process(
