@@ -49,8 +49,8 @@ else()
 endif()
 
 configure_file(
-    ${CMAKE_SOURCE_DIR}/src/version.hpp.in
-    ${CMAKE_BINARY_DIR}/generated/version_generated.hpp
+    ${CMAKE_SOURCE_DIR}/src/Version.hpp.in
+    ${CMAKE_BINARY_DIR}/generated/Version_Generated.hpp
     @ONLY
 )
 
