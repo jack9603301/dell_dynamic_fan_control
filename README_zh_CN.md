@@ -17,8 +17,8 @@
 
 本项目采用完全符合 C++23 标准的风格，并须遵守以下规范：
 1. 代码风格完全遵循 C++23 标准。
-2. 所有类名均采用 PascalCase（大驼峰）命名法。
-3. 函数内部变量名采用小写字母加下划线分隔的命名方式。
+2. 所有类名均采用 PascalCase（大驼峰）命名规范。
+3. 函数内的所有变量名均遵循 SnakeCase(蛇形) 命名规范。
 4. 一个制表符（Tab）或代码缩进相当于 4 个空格。
 5. 遵循树状目录结构，所有设备执行器（actuators）应放置在 `Devices` 目录下，并按服务器品牌名称组织子目录。
 
@@ -29,8 +29,8 @@
 ```
 git clone https://github.com/jack9603301/DynamicFanControl
 # 或 git clone git@github.com:jack9603301/DynamicFanControl.git
-git checkout release-v{major}.{minor}
-# or git checkout main
+git checkout main
+# or git checkout release-v{major}.{minor}
 mkdir build
 cd build
 cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release ..
@@ -45,8 +45,8 @@ sudo make install
 ```
 git clone https://github.com/jack9603301/DynamicFanControl
 # 或 git clone git@github.com:jack9603301/DynamicFanControl.git
-git checkout release-v{major}.{minor}
-# or git checkout main
+git checkout main
+# or git checkout release-v{major}.{minor}
 mkdir build
 cd build
 cmake -DCMAKE_INSTALL_PREFIX=$PWD/dist/ -DCMAKE_BUILD_TYPE=Debug -DENABLE_CLANGD=ON ..
@@ -66,7 +66,7 @@ make install
 
 ## 获取社区帮助
 
-这是一个个人业余项目；如有需要，欢迎提交 Issue 或直接联系我。我会尽力尽快回复，但请勿期望能立即得到答复。
+这是一个个人业余项目，如有需要，欢迎提交 Issue 或直接联系我。我会尽力尽快回复，但请勿期望能立即得到答复。
 
 由于该软件的初衷仅为处理服务器风扇控制和降噪，我可能无法针对所有使用场景提供支持。
 欢迎分享建议或提交 Pull Request (PR) 以添加您认为有价值的功能。
@@ -77,5 +77,5 @@ make install
 本项目是基于个人需求开发的，但如果您愿意进行个人捐赠，欢迎随时联系我。
 我的邮箱地址是：jack9603301@qhjack.top
 
-请注意，我仅接受法币捐赠；捐赠完成后，资金将作为个人收入处理。
+请注意，我仅接受法币捐赠，捐赠完成后，资金将作为个人收入处理。
 如果您愿意提供支持，欢迎联系我进行捐赠——哪怕只是请我喝杯咖啡。

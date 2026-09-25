@@ -18,7 +18,7 @@ This program implements temperature monitoring and forced fan overrides through 
 This program adheres to a fully C++23 style and must comply with the following specifications:
 1. This program adheres to a fully C++23 style and must comply with the following specifications:
 2. All class names follow the PascalCase naming convention.
-3. Variable names within all functions follow the convention of lowercase letters separated by underscores.
+3. All variable names within functions follow the SnakeCase naming convention.
 4. One tab/code indentation equals 4 spaces.
 5. Following the tree-like directory structure, all device actuators should be placed under the "Devices" directory, organized into subdirectories named after the server brands.
 
@@ -29,8 +29,8 @@ For a source-based installation, you should execute the following commands; this
 ```
 git clone https://github.com/jack9603301/DynamicFanControl
 # or git clone git@github.com:jack9603301/DynamicFanControl.git
-git checkout release-v{major}.{minor}
-# or git checkout main
+git checkout main
+# or git checkout release-v{major}.{minor}
 mkdir build
 cd build
 cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release ..
@@ -45,8 +45,8 @@ You should execute the following command; it will pull, compile, and install the
 ```
 git clone https://github.com/jack9603301/DynamicFanControl
 # or git clone git@github.com:jack9603301/DynamicFanControl.git
-git checkout release-v{major}.{minor}
-# or git checkout main
+git checkout main
+# or git checkout release-v{major}.{minor}
 mkdir build
 cd build
 cmake -DCMAKE_INSTALL_PREFIX=$PWD/dist/ -DCMAKE_BUILD_TYPE=Debug -DENABLE_CLANGD=ON ..
@@ -66,7 +66,7 @@ The explanations for the compilation options are as follows:
 
 ## Get help from the community
 
-This is a personal hobby project; feel free to open issues or contact me directly for assistance. While I strive to respond as quickly as possible, please do not expect an immediate reply.
+This is a personal hobby project, feel free to open issues or contact me directly for assistance. While I strive to respond as quickly as possible, please do not expect an immediate reply.
 
 I may not be able to provide support for every scenario, as the software was created solely to handle server fan control and noise reduction. 
 You are welcome to share any suggestions or submit a pull request (PR) to add features you find valuable.
@@ -77,5 +77,5 @@ email: jack9603301@qhjack.top
 This project was developed based on personal needs, but if you would like to make a personal donation, please feel free to contact me.
 my email address is jack9603301@qhjack.top
 
-However, I only accept donations made in fiat currency; once the donation is complete, the funds are treated as personal income. 
+However, I only accept donations made in fiat currency. once the donation is complete, the funds are treated as personal income. 
 If you would like to offer support, please feel free to contact me to make a donation—you could even just buy me a coffee.
