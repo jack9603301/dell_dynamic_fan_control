@@ -14,7 +14,9 @@
 
 #if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
 #include <csignal>
-#endif
+#else
+#error "The required signal mechanism cannot be provided."
+#endif // #if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
 
 namespace params_option = boost::program_options;
 
@@ -28,7 +30,9 @@ void SignalHandler(int signum) {
         stop_source.request_stop();
     }
 }
-#endif
+#else
+#error "The required signal mechanism cannot be provided."
+#endif // #if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
 
 void show_version(void) {
 #if USE_CMAKE_GENERATED
@@ -87,7 +91,9 @@ int main(int argc, char **argv) {
 #if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
     std::signal(SIGTERM, SignalHandler);
     std::signal(SIGINT, SignalHandler);
-#endif
+#else
+#error "Unable to generate version information, compilation terminated."
+#endif // #if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
 
     std::string config_path = vm["config"].as<std::string>();
     auto *config = Config::GetInstance();
