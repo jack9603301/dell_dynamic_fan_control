@@ -31,11 +31,15 @@ void SignalHandler(int signum) {
 #endif
 
 void show_version(void) {
+#if USE_CMAKE_GENERATED
 #if USE_GIT_INFO
     std::cout << std::format("{} Version v{}.{} Git Hash {}", PROJECT_NAME, MAJOR_VERSION, MINOR_VERSION, GIT_HASH) << std::endl;
 #else
     std::cout << std::format("{} Version v{}.{}", PROJECT_NAME, MAJOR_VERSION, MINOR_VERSION) << std::endl;
 #endif // #if USE_GIT_INFO
+#else
+#error "Unable to generate version information, compilation terminated."
+#endif // #if USE_CMAKE_GENERATED
 }
 
 int main(int argc, char **argv) {

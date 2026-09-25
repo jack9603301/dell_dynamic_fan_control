@@ -1,8 +1,11 @@
 #ifndef __VERSION_GENERATED_HPP
 #define __VERSION_GENERATED_HPP
 
+#define MAJOR_VERSION          "@PROJECT_VERSION_MAJOR@"
+#define MINOR_VERSION          "@PROJECT_VERSION_MINOR@"
+
 #if USE_GIT_INFO
-#define GIT_HASH       "@GIT_SHORT_HASH@"
+#define GIT_HASH               "@GIT_SHORT_HASH@"
 #endif
 
 #endif 
