@@ -33,7 +33,7 @@ git checkout main
 # or git checkout release-v{major}.{minor}
 mkdir build
 cd build
-cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release ..
+cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_SYSCONFDIR=/etc -DCMAKE_INSTALL_LIBDIR=lib -DENABLE_SYSTEMD=ON ..
 make
 sudo make install
 ```
@@ -49,7 +49,7 @@ git checkout main
 # or git checkout release-v{major}.{minor}
 mkdir build
 cd build
-cmake -DCMAKE_INSTALL_PREFIX=$PWD/dist/ -DCMAKE_BUILD_TYPE=Debug -DENABLE_CLANGD=ON ..
+cmake -DCMAKE_INSTALL_PREFIX=$PWD/dist/ -DCMAKE_BUILD_TYPE=Debug -DENABLE_CLANGD=ON -DENABLE_SYSTEMD=OFF ..
 make
 make install
 ```
@@ -59,10 +59,13 @@ For debug builds, we recommend enabling the `ENABLE_CLANGD` option; this generat
 The explanations for the compilation options are as follows:
 
 - CMAKE_INSTALL_PREFIX: The installation path for this program. for source-based installations, it is typically `/usr`.
+- CMAKE_INSTALL_SYSCONFDIR: Provide the installation path for sysconfig. typically, this is `/etc`.
+- CMAKE_INSTALL_LIBDIR: Specify the installation path for `libdir`; this can be relative to `CMAKE_INSTALL_PREFIX` (typically `lib`).
 - CMAKE_BUILD_TYPE: The build type depends on your CMake configuration; we typically select the following value:
     - Debug
     - Release
 - ENABLE_CLANGD: Generate compile_commands.json for IDEs
+- ENABLE_SYSTEMD: Enable Systemd support
 
 ## Get help from the community
 

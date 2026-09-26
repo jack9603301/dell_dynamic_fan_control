@@ -33,16 +33,14 @@ if (GIT_FOUND AND EXISTS "${CMAKE_SOURCE_DIR}/.git")
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         OUTPUT_VARIABLE GIT_SHORT_HASH
         OUTPUT_STRIP_TRAILING_WHITESPACE
-        ERROR_QUIET
-    )
+        ERROR_QUIET)
 
     execute_process(
         COMMAND ${GIT_EXECUTABLE} rev-parse HEAD
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         OUTPUT_VARIABLE GIT_HASH
         OUTPUT_STRIP_TRAILING_WHITESPACE
-        ERROR_QUIET
-    )
+        ERROR_QUIET)
 
     message(STATUS "Git Hash: ${GIT_HASH}")
     
@@ -54,8 +52,7 @@ endif()
 configure_file(
     ${CMAKE_SOURCE_DIR}/src/Version.hpp.in
     ${CMAKE_BINARY_DIR}/generated/Version_Generated.hpp
-    @ONLY
-)
+    @ONLY)
 
 target_compile_definitions(dynamic_fan_control PRIVATE USE_CMAKE_GENERATED)
 

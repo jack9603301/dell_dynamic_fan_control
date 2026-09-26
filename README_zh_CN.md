@@ -33,7 +33,7 @@ git checkout main
 # or git checkout release-v{major}.{minor}
 mkdir build
 cd build
-cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release ..
+cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_SYSCONFDIR=/etc -DCMAKE_INSTALL_LIBDIR=lib -DENABLE_SYSTEMD=ON ..
 make
 sudo make install
 ```
@@ -49,7 +49,7 @@ git checkout main
 # or git checkout release-v{major}.{minor}
 mkdir build
 cd build
-cmake -DCMAKE_INSTALL_PREFIX=$PWD/dist/ -DCMAKE_BUILD_TYPE=Debug -DENABLE_CLANGD=ON ..
+cmake -DCMAKE_INSTALL_PREFIX=$PWD/dist/ -DCMAKE_BUILD_TYPE=Debug -DENABLE_CLANGD=ON -DENABLE_SYSTEMD=OFF ..
 make
 make install
 ```
@@ -59,10 +59,13 @@ make install
 编译选项说明如下：
 
 - CMAKE_INSTALL_PREFIX：程序的安装路径。对于源码安装，通常设为 `/usr`。
+- CMAKE_INSTALL_SYSCONFDIR：指定系统配置文件的安装路径。通常为 `/etc`。
+- CMAKE_INSTALL_LIBDIR：指定库文件（libdir）的安装路径。该路径可以是相对于 `CMAKE_INSTALL_PREFIX` 的相对路径（通常为 `lib`）。
 - CMAKE_BUILD_TYPE：构建类型，取决于您的 CMake 配置；通常选择以下值之一：
-- Debug
-- Release
+    - Debug
+    - Release
 - ENABLE_CLANGD：为 IDE 生成 compile_commands.json 文件
+- ENABLE_SYSTEMD：启用 Systemd 支持
 
 ## 获取社区帮助
 

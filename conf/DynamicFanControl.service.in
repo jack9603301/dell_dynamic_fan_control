@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Type=simple
 Restart=always                                                                                                                                                                                                                            
-ExecStart=/usr/bin/dynamic_fan_control -c /etc/sysconfig/fan_config.yaml
+ExecStart=@APP_INSTALL_BINARY@ -c @APP_INSTALL_CONFIG@
 Restart=on-failure
 
 [Install]
